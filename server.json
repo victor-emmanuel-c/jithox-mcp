@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.victor-emmanuel-c/jithox-mcp",
+  "title": "Jithox Free Business Checks",
+  "description": "Free, no-account checks for IBANs, EU VAT number format, Peppol invoice rules and CSV/XLSX files.",
+  "version": "1.0.0",
+  "websiteUrl": "https://github.com/victor-emmanuel-c/jithox-mcp",
+  "repository": {
+    "url": "https://github.com/victor-emmanuel-c/jithox-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://jithox.com/api/mcp"
+    }
+  ]
+}
