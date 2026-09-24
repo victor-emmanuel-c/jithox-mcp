@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/victor-emmanuel-c/jithox-mcp/main/docs/standards/ap2-payee-evidence.schema.json",
+  "title": "AP2 risk_data profile: payee_evidence (draft 0.1)",
+  "description": "Value of risk_data.payee_evidence in a closed AP2 v0.2 Payment Mandate: evidence about the payee, signed by a third party, bound to payee.id. See AP2_PAYEE_EVIDENCE.md.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "$ref": "#/$defs/entry"
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "required": [
+        "format",
+        "jws",
+        "payee_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "compact-jws"
+        },
+        "jws": {
+          "type": "string",
+          "maxLength": 8192,
+          "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+          "description": "Compact JWS (RFC 7515) exactly as the issuer returned it. Header: #/$defs/jws_header. Payload: #/$defs/jithox_payload_v1."
+        },
+        "payee_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "MUST equal payee.id of this Payment Mandate. Never empty: an empty id falls back to name + website matching (AP2 #315)."
+        },
+        "disclosure": {
+          "type": "object",
+          "required": [
+            "input",
+            "salt"
+          ],
+          "additionalProperties": false,
+          "description": "Only for the party that executes the payment, as a selectively disclosable SD-JWT claim or out of band. Never in the clear: with the salt, anyone who can guess the accounts can confirm them.",
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/payment_change_input"
+            },
+            "salt": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,}$"
+            }
+          }
+        }
+      }
+    },
+    "jws_header": {
+      "type": "object",
+      "required": [
+        "alg",
+        "kid",
+        "typ"
+      ],
+      "properties": {
+        "alg": {
+          "const": "EdDSA"
+        },
+        "typ": {
+          "const": "jithox-evidence+jws"
+        },
+        "kid": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "crit"
+            ]
+          },
+          {
+            "required": [
+              "b64"
+            ]
+          },
+          {
+            "required": [
+              "jwk"
+            ]
+          },
+          {
+            "required": [
+              "jku"
+            ]
+          },
+          {
+            "required": [
+              "x5u"
+            ]
+          },
+          {
+            "required": [
+              "x5c"
+            ]
+          }
+        ]
+      },
+      "description": "A key or key URL inside the token anchors nothing, so these headers are refused."
+    },
+    "jithox_payload_v1": {
+      "type": "object",
+      "required": [
+        "v",
+        "iss",
+        "kind",
+        "issuedAt",
+        "verdict",
+        "checks",
+        "inputDigest",
+        "toolVersion",
+        "kid"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "iss": {
+          "const": "https://jithox.com"
+        },
+        "kind": {
+          "const": "payment_change_check",
+          "description": "The only kind that is signed in production today."
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Issuer server clock, not a trusted timestamp."
+        },
+        "verdict": {
+          "enum": [
+            "no_change",
+            "verify_first",
+            "stop",
+            "invalid_new_account"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "status",
+              "source"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "warn",
+                  "unknown",
+                  "skipped"
+                ]
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "inputDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "toolVersion": {
+          "type": "string"
+        },
+        "kid": {
+          "type": "string",
+          "description": "MUST equal the header kid."
+        }
+      }
+    },
+    "payment_change_input": {
+      "type": "object",
+      "required": [
+        "newIban",
+        "ibanOnFile",
+        "supplierCountry"
+      ],
+      "additionalProperties": false,
+      "description": "Canonical input of payment_change_check: IBANs without spaces, dots or dashes, upper case; ibanOnFile null only when none was given; supplierCountry two letters or null.",
+      "properties": {
+        "newIban": {
+          "type": "string"
+        },
+        "ibanOnFile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "supplierCountry": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z]{2}$"
+        }
+      }
+    }
+  }
+}
