@@ -1,16 +1,80 @@
-# Jithox MCP — free EU e-invoice, Peppol, VAT and IBAN checks for AI agents
+# Jithox MCP — check a payment before your AI agent makes it
 
-Jithox runs a remote [MCP](https://modelcontextprotocol.io) server with read-only
-checks for e-invoices and payments: Peppol BIS Billing 3.0 rule validation,
-Peppol participant (receiver) lookup, EU VAT number format and VIES coverage,
-IBAN structure, supplier bank-detail changes, and turning a CSV/XLSX file into
-clean data.
+Jithox runs a remote [MCP](https://modelcontextprotocol.io) server. Its front
+door is `preflight_payment`: one free call, before an agent pays an invoice,
+that answers `stop`, `review_required` or `no_blockers_found` with signed
+evidence. Next to it are read-only checks for e-invoices and payments: IBAN
+structure, supplier bank-detail changes, Peppol BIS Billing 3.0 rule
+validation, Peppol participant (receiver) lookup, EU VAT number format and VIES
+coverage, and turning a CSV/XLSX file into clean data.
 
 It is for developers and AI agents that prepare an e-invoice or a payment and
 want a check **before** something is sent, submitted to Peppol, or paid.
 
 This repository holds **examples and a registry manifest only**. It contains no
 server code. The server itself is hosted by Jithox.
+
+## Before your agent pays: `preflight_payment`
+
+Call `preflight_payment` once, before your agent pays an invoice. It compares
+what the person approved, as your agent reports it (payee, amount, currency,
+account), with what is about to be paid; checks the IBAN and a changed
+supplier bank account against the one on file; and answers `stop`,
+`review_required` or `no_blockers_found`, with every check, what it does not
+prove, and a signed evidence token. No account, no token. It never pays and
+never calls an account safe: a check that did not run is listed as `not_run`,
+never as a pass.
+
+Today only the `invoice_bank` rail has checks. For `x402`, `card_or_giftcard`
+and `crypto_bridge` payments no rail checks run, and the best answer is
+`review_required` with reason `rail_not_covered` (measured 2026-09-25).
+
+The person approved paying invoice 2026-105 to Acme BV; the invoice now asks
+for a different account than the one on file:
+
+```bash
+curl -s https://jithox.com/api/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"preflight_payment","arguments":{"rail":"invoice_bank","approved":{"amount":"1210.00","currency":"EUR","payee":{"name":"Acme BV"},"purpose":"Invoice 2026-105"},"instructionSource":"human","payment":{"iban":"BE71 0961 2345 6769","amount":"1210.00","currency":"EUR","payeeName":"Acme BV","supplierCountry":"BE"},"ibanOnFile":"BE68539007547034"}}}'
+```
+
+The tool result (`result.content[0].text`), unwrapped; run against production
+on 2026-09-25, `…` marks where it was shortened for this page:
+
+```json
+{
+  "kind": "payment_preflight",
+  "data": {
+    "schemaVersion": "jx.payment-preflight/v1",
+    "verdict": "review_required",
+    "reasons": [{ "code": "payment_change_verify_first", "check": "payment_change" }],
+    "humanStep": "Call the supplier back on a phone number from your own records (never one from this invoice or its e-mail) and have them read the account number to you.",
+    "checks": [
+      { "id": "approval", "status": "pass", … },
+      { "id": "iban", "status": "pass", "value": "BE71 **** **** 6769: structure and check digits are right", … },
+      { "id": "payment_change", "status": "warn", "value": "verify_first", "findings": ["bank_changed"], … },
+      { "id": "vat_register", "status": "not_run", "reason": "needs_connection", … },
+      …
+    ],
+    "billing": { "charged": false, "units": [] },
+    …
+  },
+  "evidence": {
+    "format": "compact-jws",
+    "jws": "eyJhbG…",
+    "jwks": "https://jithox.com/.well-known/jwks.json",
+    "verify": "https://jithox.com/api/v1/evidence/verify",
+    …
+  }
+}
+```
+
+Anyone can check that a verdict was not changed: `POST` the `jws` (optionally
+with the `input` and its `inputSalt`) to
+`https://jithox.com/api/v1/evidence/verify`. The untouched token answered
+`"status": "valid"`; the same token with its verdict changed answered
+`"invalid"` with reason `signature_mismatch` (tested 2026-09-25).
 
 ## Connect
 
@@ -39,12 +103,14 @@ OAuth prompt appears — this endpoint needs no login for the free tools.
 
 ## What works without an account
 
-The endpoint lists **19 tools**. **8 of them are free and need no token and no
-account** (checked 2026-09-23, curl against production, each with a valid
-payload — earlier counts of "7 of 18" were stale):
+The endpoint lists **20 tools**. **9 of them are free and need no token and no
+account** (checked 2026-09-25, curl against production, each with a valid
+payload — the earlier "8 of 19" was counted before `preflight_payment` went
+live):
 
 | Tool | What it does |
 | --- | --- |
+| `preflight_payment` | Once before an agent pays: compares the approval with the payment, checks the IBAN and a changed bank account, and answers `stop`, `review_required` or `no_blockers_found` with signed evidence. Never pays. |
 | `check_peppol_ready` | Checks an invoice against 21 published Peppol BIS Billing 3.0 rules and names each failing rule with a fix. Not the official validator. |
 | `lookup_peppol_participant` | Asks the live Peppol registers whether a given customer (by enterprise/VAT number) can receive an e-invoice today, and which document types their access point accepts. |
 | `verify_iban` | IBAN structure and check digits (ISO 13616 / ISO 7064). Never claims the account exists or who owns it. |
@@ -160,6 +226,20 @@ is `check_vat_list`, a paid tool).
 
 ## Examples in code
 
+- [`examples/python/preflight_payment.py`](examples/python/preflight_payment.py) —
+  standard library only: `initialize`, then `preflight_payment` on a payment
+  whose supplier bank account changed, then `POST /api/v1/evidence/verify` on
+  the signed answer. Run with `python examples/python/preflight_payment.py`.
+  Real output against production, 2026-09-25:
+  ```
+  server: jithox-engine
+  verdict: review_required
+  reasons: ['payment_change_verify_first']
+  checks: {'approval': 'pass', 'mandate': 'not_run', 'instruction': 'pass', 'iban': 'pass', 'supplier_country': 'pass', 'payment_change': 'warn', 'invoice_local': 'not_run', 'hidden_text': 'not_run', 'peppol_participant': 'not_run', 'supplier_memory': 'not_run', 'vat_register': 'not_run', 'sanctions': 'not_run'}
+  humanStep: Call the supplier back on a phone number from your own records (never one from this invoice or its e-mail) and have them read the account number to you.
+  charged: False
+  evidence: valid inputMatch: True
+  ```
 - [`examples/python/peppol_ready.py`](examples/python/peppol_ready.py) —
   standard library only: `initialize`, then `check_peppol_ready` on a
   compliant invoice, then `lookup_peppol_participant` on the buyer. Run with
