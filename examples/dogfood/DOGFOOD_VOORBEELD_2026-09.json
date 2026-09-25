@@ -1,0 +1,119 @@
+{
+  "kaart": "t_8109c72a (ROUTE D dogfood)",
+  "factuur": {
+    "leverancier": "Shopify International Limited (Ierland)",
+    "soort": "maandfactuur Shopify-abonnement, pdf-bijlage, ontvangen 2026-09-15",
+    "betaalwijze": "PayPal (volgens de mail), geen IBAN op de factuur",
+    "btw_op_factuur": "0 %, verlegd (reverse charge)",
+    "leveranciers_btw_nummer": "IE3347697KH",
+    "mail_authenticatie": {
+      "dkim": "pass",
+      "spf": "pass",
+      "dmarc": "pass (beleid reject)"
+    },
+    "weggelaten": [
+      "mailtekst",
+      "adressen",
+      "factuurnummer",
+      "bedrag"
+    ]
+  },
+  "live_call": {
+    "tijd_utc": "2026-09-24T08:47:16Z",
+    "endpoint": "https://jithox.com/api/mcp (tools/call)",
+    "client": "jx.py, onze interne client; markeert elke call als eigen verkeer, zodat die niet als externe agent telt",
+    "zonder_jx_py": "POST https://jithox.com/api/mcp met Authorization: Bearer <token>, Content-Type: application/json en Accept: application/json, text/event-stream; body: {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"check_vat_list\",\"arguments\":<argumenten>}}",
+    "commando": "python jx.py check_vat_list '<argumenten>'",
+    "tool": "check_vat_list",
+    "argumenten": {
+      "rows": [
+        {
+          "reference": "Shopify Billing",
+          "vatId": "IE3347697KH"
+        }
+      ],
+      "requesterVatId": "BE1039898594"
+    }
+  },
+  "antwoord": {
+    "kind": "vat_list_check",
+    "data": {
+      "ok": true,
+      "schema_version": "jx.vat-list-check/v1",
+      "registerTier": true,
+      "rows": [
+        {
+          "index": 0,
+          "reference": "Shopify Billing",
+          "input": "IE3347697KH",
+          "normalized": "IE3347697KH",
+          "countryCode": "IE",
+          "local": "well_formed",
+          "register": "valid",
+          "detail": "Registered in the EU register (VIES) as SHOPIFY INTERNATIONAL LIMITED. The European Commission registered this consultation under number WAPIAAAAaDSmQEaU; that is its record of this lookup at that moment, and nothing more.",
+          "registeredName": "SHOPIFY INTERNATIONAL LIMITED",
+          "consultationNumber": "WAPIAAAAaDSmQEaU",
+          "consultationRequester": "BE1039898594",
+          "consultationAt": "2026-09-24T08:47:17.951Z",
+          "checkedAt": "2026-09-24T08:47:17.968Z"
+        }
+      ],
+      "totals": {
+        "rows": 1,
+        "wellFormed": 1,
+        "empty": 0,
+        "malformed": 0,
+        "notCovered": 0,
+        "duplicate": 0,
+        "valid": 1,
+        "invalid": 0,
+        "unknown": 0,
+        "notRun": 0
+      },
+      "answeredRows": 1,
+      "retry": {
+        "indexes": [],
+        "advice": "Nothing to send again."
+      },
+      "pricing": {
+        "localChecks": "included",
+        "registerCheck": "run for this call",
+        "unit": "answered_row",
+        "pricePerUnitCredits": 1,
+        "pricePerUnitEur": "EUR 0.01",
+        "maxCreditsPerCall": 20,
+        "chargedWhen": "After the answers are in, once per request, for the rows the EU register (VIES) actually answered: valid or invalid.",
+        "neverCharged": "A row without an answer (register down, rate limited, out of time), a malformed number, a duplicate, a number VIES does not cover, and every local check."
+      },
+      "limits": {
+        "maxRowsPerCall": 20,
+        "maxReferenceChars": 80,
+        "maxVatIdChars": 40,
+        "deadlineMs": 40000
+      },
+      "consultation": {
+        "available": true,
+        "note": "Each row the register answers carries the European Commission's own consultation number for that lookup, registered to the requester VAT number you sent — its record that this consultation took place at that moment, and nothing more about the company."
+      }
+    },
+    "billing": {
+      "units": 1,
+      "pricePerUnitCredits": 1,
+      "credits": 1,
+      "receiptRunId": "mcp_1802ef442d997221032f0385f54329ea33ff065d",
+      "charged": true
+    }
+  },
+  "onafhankelijke_controle": {
+    "bron": "VIES REST van de Europese Commissie, ms/IE/vat/3347697KH",
+    "tijd_utc": "2026-09-24T08:06:19.826Z",
+    "isValid": true,
+    "name": "SHOPIFY INTERNATIONAL LIMITED"
+  },
+  "registratie": {
+    "funnel": "traffic own_probe, tool_call_accepted (mcp_funnel_events, 08:47:18Z)",
+    "tegoed": "1 credit van de werkruimte met tegoedbron internal_dogfood (credit_transactions 08:47:17Z)",
+    "telt_als_externe_agent": false,
+    "telt_als_omzet": false
+  }
+}

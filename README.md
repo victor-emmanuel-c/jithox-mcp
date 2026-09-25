@@ -175,6 +175,8 @@ is `check_vat_list`, a paid tool).
 - [`examples/csharp/Program.cs`](examples/csharp/Program.cs) — `HttpClient`:
   `initialize`, then `check_vat_list_format`. Runs with `dotnet run` in a
   console project, or `csc -r:System.Net.Http.dll Program.cs` on .NET Framework 4.x.
+- [`examples/dogfood/`](examples/dogfood/DOGFOOD_VOORBEELD_2026-09.md) — our own
+  dogfood example (in Dutch): the paid `check_vat_list` on the VAT number of an invoice we received.
 
 ## Machine-readable pointers
 
