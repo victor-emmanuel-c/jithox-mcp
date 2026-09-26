@@ -1,0 +1,39 @@
+test_configured_payee_path_and_tool_matcher (test_hook.HookTests.test_configured_payee_path_and_tool_matcher) ... ok
+test_corrupt_memory_is_not_replaced_or_trusted (test_hook.HookTests.test_corrupt_memory_is_not_replaced_or_trusted) ... ok
+test_deadline_bounds_dns_connect_and_body_not_only_headers (test_hook.HookTests.test_deadline_bounds_dns_connect_and_body_not_only_headers) ... ok
+test_existing_writer_lock_is_not_removed_or_overwritten (test_hook.HookTests.test_existing_writer_lock_is_not_removed_or_overwritten) ... ok
+test_first_registration_asks_and_sends_only_account_and_country (test_hook.HookTests.test_first_registration_asks_and_sends_only_account_and_country) ... ok
+test_formatted_bban_country_like_block_is_not_another_account (test_hook.HookTests.test_formatted_bban_country_like_block_is_not_another_account) ... ok
+test_hardlinked_memory_is_refused (test_hook.HookTests.test_hardlinked_memory_is_refused) ... ok
+test_insecure_memory_permissions_are_refused (test_hook.HookTests.test_insecure_memory_permissions_are_refused) ... skipped 'POSIX permissions require Linux/macOS'
+test_invalid_country_is_not_silently_ignored (test_hook.HookTests.test_invalid_country_is_not_silently_ignored) ... ok
+test_invalid_new_account_is_deny (test_hook.HookTests.test_invalid_new_account_is_deny) ... ok
+test_known_account_pre_never_writes_memory (test_hook.HookTests.test_known_account_pre_never_writes_memory) ... ok
+test_local_record_cannot_be_replaced_by_caller_reference (test_hook.HookTests.test_local_record_cannot_be_replaced_by_caller_reference) ... ok
+test_many_accounts_share_one_deadline (test_hook.HookTests.test_many_accounts_share_one_deadline) ... ok
+test_mcp_content_success_is_remembered_but_embedded_failure_is_not (test_hook.HookTests.test_mcp_content_success_is_remembered_but_embedded_failure_is_not) ... ok
+test_memory_parent_link_is_refused (test_hook.HookTests.test_memory_parent_link_is_refused) ... ok
+test_memory_symlink_is_never_read_or_written (test_hook.HookTests.test_memory_symlink_is_never_read_or_written) ... skipped 'file symlink creation unavailable: OSError'
+test_missing_or_ambiguous_payee_never_allows_or_learns (test_hook.HookTests.test_missing_or_ambiguous_payee_never_allows_or_learns) ... ok
+test_mod97_failure_denies_without_request (test_hook.HookTests.test_mod97_failure_denies_without_request) ... ok
+test_nested_formatted_accounts_are_all_checked_worst_verdict_wins (test_hook.HookTests.test_nested_formatted_accounts_are_all_checked_worst_verdict_wins) ... ok
+test_no_iban_reports_checked_nothing_without_permission_decision (test_hook.HookTests.test_no_iban_reports_checked_nothing_without_permission_decision) ... ok
+test_nonmatching_tools_do_not_call_or_learn (test_hook.HookTests.test_nonmatching_tools_do_not_call_or_learn) ... ok
+test_oversized_input_is_ask_without_network (test_hook.HookTests.test_oversized_input_is_ask_without_network) ... ok
+test_parallel_posts_preserve_both_payees (test_hook.HookTests.test_parallel_posts_preserve_both_payees) ... ok
+test_replace_failure_preserves_previous_record (test_hook.HookTests.test_replace_failure_preserves_previous_record) ... ok
+test_response_steps_are_redacted_before_output (test_hook.HookTests.test_response_steps_are_redacted_before_output) ... ok
+test_sse_tool_result_is_supported (test_hook.HookTests.test_sse_tool_result_is_supported) ... ok
+test_stop_is_deny_not_ask (test_hook.HookTests.test_stop_is_deny_not_ask) ... ok
+test_successful_post_remembers_then_matching_pre_allows (test_hook.HookTests.test_successful_post_remembers_then_matching_pre_allows) ... ok
+test_transport_failures_are_ask_never_allow (test_hook.HookTests.test_transport_failures_are_ask_never_allow) ... ok
+test_unsuccessful_or_ambiguous_post_never_learns (test_hook.HookTests.test_unsuccessful_or_ambiguous_post_never_learns) ... ok
+test_verify_first_is_ask (test_hook.HookTests.test_verify_first_is_ask) ... ok
+test_launcher_with_python_reports_checked_nothing (test_plugin.PluginTests.test_launcher_with_python_reports_checked_nothing) ... ok
+test_manifest_and_marketplace_load_default_hooks_once (test_plugin.PluginTests.test_manifest_and_marketplace_load_default_hooks_once) ... ok
+test_missing_python_runtime_asks_instead_of_nonblocking_crash (test_plugin.PluginTests.test_missing_python_runtime_asks_instead_of_nonblocking_crash) ... ok
+
+----------------------------------------------------------------------
+Ran 34 tests in 32.683s
+
+OK (skipped=2)

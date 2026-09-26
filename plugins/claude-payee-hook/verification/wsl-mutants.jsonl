@@ -1,0 +1,8 @@
+{"baseline": {"exit": 0, "tests": 7, "failures": [], "errors": [], "skips": 0}}
+{"mutant": "error_to_allow", "target_tests": ["test_transport_failures_are_ask_never_allow"], "exit": 1, "tests": 1, "failures": ["test_transport_failures_are_ask_never_allow"], "errors": [], "skips": 0, "killed": true}
+{"mutant": "caller_reference", "target_tests": ["test_local_record_cannot_be_replaced_by_caller_reference"], "exit": 1, "tests": 1, "failures": ["test_local_record_cannot_be_replaced_by_caller_reference"], "errors": [], "skips": 0, "killed": true}
+{"mutant": "stop_to_ask", "target_tests": ["test_stop_is_deny_not_ask"], "exit": 1, "tests": 1, "failures": ["test_stop_is_deny_not_ask"], "errors": [], "skips": 0, "killed": true}
+{"mutant": "skip_mod97", "target_tests": ["test_mod97_failure_denies_without_request"], "exit": 1, "tests": 1, "failures": ["test_mod97_failure_denies_without_request"], "errors": [], "skips": 0, "killed": true}
+{"mutant": "remember_in_pre", "target_tests": ["test_known_account_pre_never_writes_memory"], "exit": 1, "tests": 1, "failures": ["test_known_account_pre_never_writes_memory"], "errors": [], "skips": 0, "killed": true}
+{"mutant": "follow_memory_link", "target_tests": ["test_memory_parent_link_is_refused", "test_memory_symlink_is_never_read_or_written"], "exit": 1, "tests": 2, "failures": ["test_memory_parent_link_is_refused", "test_memory_symlink_is_never_read_or_written"], "errors": [], "skips": 0, "killed": true}
+{"killed": 6, "total": 6, "platform": "linux"}

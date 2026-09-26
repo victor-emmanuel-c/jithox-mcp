@@ -1,0 +1,3 @@
+plugins/claude-payee-hook/** text eol=lf
+tests/claude_payee/** text eol=lf
+.claude-plugin/*.json text eol=lf

@@ -1,0 +1,12 @@
+{
+  "name": "jithox",
+  "description": "Deterministic invoice and payment checks for AI-agent workflows.",
+  "owner": { "name": "Jithox" },
+  "plugins": [
+    {
+      "name": "claude-payee-hook",
+      "source": "./plugins/claude-payee-hook",
+      "description": "A deterministic payment-account change hook for Claude Code."
+    }
+  ]
+}

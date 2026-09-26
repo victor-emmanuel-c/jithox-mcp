@@ -9,7 +9,7 @@ clean data.
 It is for developers and AI agents that prepare an e-invoice or a payment and
 want a check **before** something is sent, submitted to Peppol, or paid.
 
-This repository holds **examples and a registry manifest only**. It contains no
+This repository holds **examples, a registry manifest and optional hook plugins**. It contains no
 server code. The server itself is hosted by Jithox.
 
 ## Connect
@@ -189,6 +189,16 @@ is `check_vat_list`, a paid tool).
 
 Nothing on this endpoint sends an invoice, submits it to Peppol, posts, pays
 or delivers anything. Results are technical checks, not legal or tax advice.
+
+## Optional Claude Code / Agent SDK payment hook
+
+[`claude-payee-hook`](plugins/claude-payee-hook/README.md) checks payment-like MCP
+tools before execution: account changes and errors request human approval;
+stop/invalid results deny. History is updated only after tool-reported success.
+Only IBANs and an optional supplier country go to Jithox, not names or amounts.
+No LLM judgment, no account-ownership assurance, and not a replacement for the
+bank's free Verification of Payee. See the plugin README for setup, privacy,
+matching limits and Windows/WSL verification. This is a distribution experiment.
 
 ## License
 

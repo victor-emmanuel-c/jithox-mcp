@@ -1,0 +1,7 @@
+{
+  "name": "claude-payee-hook",
+  "version": "0.1.0",
+  "description": "Compare payment IBANs with local payee history before an MCP tool runs; uncertainty requests approval.",
+  "author": { "name": "Jithox" },
+  "license": "MIT"
+}
