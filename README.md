@@ -178,6 +178,27 @@ is `check_vat_list`, a paid tool).
 - [`examples/dogfood/`](examples/dogfood/DOGFOOD_VOORBEELD_2026-09.md) — our own
   dogfood example (in Dutch): the paid `check_vat_list` on the VAT number of an invoice we received.
 
+## Agent Skill: pay-invoices-safely
+
+[`skills/pay-invoices-safely/SKILL.md`](skills/pay-invoices-safely/SKILL.md)
+is an [Agent Skill](https://agentskills.io/specification) for an agent that
+is about to pay a supplier invoice or change a supplier's bank account. It
+teaches the agent to call `check_payment_change` on every new IBAN and to hold
+the payment for a call-back by a person, to check the invoice with the free
+`POST /api/invoice/review`, and to check VAT numbers against the EU VIES
+register with the paid `review_invoice`. Copy the folder into your agent's
+skills directory.
+
+Every example in the skill runs against production. To check that it still
+does (Node 18+, no dependencies):
+
+```
+node scripts/check-skill.mjs
+```
+
+It checks the spec rules, runs each curl example, requires every tool it
+calls to be in the live `tools/list`, and fails on any price in the text.
+
 ## Machine-readable pointers
 
 - https://jithox.com/llms.txt
