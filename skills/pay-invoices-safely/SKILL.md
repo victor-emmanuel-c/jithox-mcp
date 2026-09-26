@@ -1,6 +1,6 @@
 ---
 name: pay-invoices-safely
-description: "Use this to pay invoice safely: run Jithox's live checks before an agent pays a supplier invoice or changes a supplier's bank account. Use it on every supplier bank change (a new IBAN in an e-mail, or an IBAN on the invoice that differs from the vendor record), as payment verification before a payment run, and to hold a payment to a diverted account - a common invoice fraud - until a person has called the supplier back. check_payment_change compares the new IBAN with the account on file and returns the call-back steps. POST /api/invoice/review checks the invoice structure, the totals, the IBAN and the Peppol BIS Billing 3.0 rules, free and without an account. review_invoice, a paid tool that needs a token, also checks the supplier and customer VAT numbers against the EU VIES register. Jithox never pays and never signs a payment; the agent prepares, a person decides."
+description: "Use this to pay invoices safely: run Jithox's live checks before an agent pays a supplier invoice or changes a supplier's bank account. Use it on every supplier bank change (a new IBAN in an e-mail, or an IBAN on the invoice that differs from the vendor record), as payment verification before a payment run, and to hold a payment to a diverted account - a common invoice fraud - until a person has called the supplier back. check_payment_change compares the new IBAN with the account on file and returns the call-back steps. POST /api/invoice/review checks the invoice structure, totals, IBAN and Peppol BIS Billing 3.0 rules, free and without an account. The paid review_invoice repeats those structured checks and adds supplier and customer VAT checks against EU VIES. Always run the free review first. Jithox never pays or signs a payment; the agent prepares, a person decides."
 license: MIT
 metadata:
   author: jithox
@@ -86,6 +86,7 @@ Act on `verdict`:
 | `verify_first` | Do not pay and do not change the vendor record. Hand the `requiredSteps` to a person. |
 | `stop` | Red flags. Do not pay, hold other payments to this supplier, hand `flags` and `requiredSteps` to a person. |
 | `invalid_new_account` | The number cannot be an IBAN. Do not pay. Ask the supplier for the number through a channel you already know. |
+| No answer (timeout, HTTP error or tool error) | Not a pass. Do not pay or change the vendor record; hand it to a person. |
 
 The call-back is the check. A person calls the supplier on a phone number
 that does NOT come from the e-mail, the change request or the invoice. You
@@ -146,8 +147,9 @@ How to read it:
 
 ## Step 3 - VAT numbers from the EU register: review_invoice (paid)
 
-The same review, plus the supplier and customer VAT numbers checked against
-the EU VIES register. It needs a token:
+Run this only after step 2. It repeats the structured invoice checks and adds
+supplier and customer VAT-number checks against the EU VIES register. Its
+live input schema reads the payment and declared invoice totals. It needs a token:
 
 1. A person (not the agent) creates a Jithox connection at
    https://jithox.com/mcp/account#connection.
@@ -163,8 +165,9 @@ curl -s https://jithox.com/api/oauth/token \
   -d "client_secret=$JITHOX_CLIENT_SECRET"
 ```
 
-   Put the access token from the answer in JITHOX_TOKEN. It expires; fetch a
-   new one when a call says it is no longer valid.
+   Put the access token from the answer in JITHOX_TOKEN. An expired or refused
+   token gets the same `payment_required` answer as no token. Fetch one new
+   token and try once more.
 
 3. Call the tool with the token (the invoice fields go straight into
    `arguments`):
@@ -219,8 +222,11 @@ a bank login or a signing key. You prepare; a person approves the payment.
 Hold the payment and hand it to a person when any of these is true:
 
 - step 1 gave a `verdict` other than `no_change`;
-- step 2 or 3 has a finding with severity `blocker`;
+- step 2 has not returned an answer with no finding of severity `blocker`;
+- step 3 has a finding with severity `blocker`;
 - a VAT check you needed is `skipped`, `unknown` or `fail`.
+- a check gave no answer: a timeout, an HTTP error, a JSON-RPC error or a
+  tool error is not a pass. Do not pay; hand it to a person.
 
 Even when everything passes, a clean answer is not a guarantee. Put the
 `doesNotProve` text of step 1 and the `detail` of every check that is not

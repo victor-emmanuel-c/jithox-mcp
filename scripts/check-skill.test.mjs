@@ -138,6 +138,18 @@ test("collectGround: a tool name in a tools array is not ground (only the live t
   assert.ok(!g.has("send_email_resend"));
 });
 
+test("collectGround excludes string tool lists and singular tool pointers from fleet metadata", () => {
+  const g = collectGround({
+    servers: [{ tools: ["verify_vat_vies", "validate_invoice"] }],
+    firstCall: { tool: "screen_sanctioned_name" },
+    ordinary: "grounded_value",
+  });
+  assert.ok(!g.has("verify_vat_vies"));
+  assert.ok(!g.has("validate_invoice"));
+  assert.ok(!g.has("screen_sanctioned_name"));
+  assert.ok(g.has("grounded_value"));
+});
+
 test("checkGrounding: a live tool passes, a live field or value passes, anything else is named", () => {
   const md = [
     "Call `check_payment_change`. On `verify_first`, stop.",
@@ -176,7 +188,7 @@ const SKILL = (extra = "") =>
     "```",
   ].join("\n");
 
-function fakeSite({ tools = ["check_payment_change"], status404 = [], htmlPost = false } = {}) {
+function fakeSite({ tools = ["check_payment_change"], toolSchemas = {}, status404 = [], htmlPost = false } = {}) {
   const calls = [];
   const fetch = async (url, init = {}) => {
     calls.push({ url, init });
@@ -188,7 +200,7 @@ function fakeSite({ tools = ["check_payment_change"], status404 = [], htmlPost =
       if (htmlPost) return json(200, "<html></html>", "text/html");
       const rpc = JSON.parse(init.body);
       if (rpc.method === "tools/list") {
-        return json(200, { jsonrpc: "2.0", id: rpc.id, result: { tools: tools.map((name) => ({ name, description: "d", inputSchema: { type: "object", properties: { newIban: { type: "string" } } } })) } });
+        return json(200, { jsonrpc: "2.0", id: rpc.id, result: { tools: tools.map((name) => ({ name, description: "d", inputSchema: toolSchemas[name] ?? { type: "object", properties: { newIban: { type: "string" } } } })) } });
       }
       const text = JSON.stringify({ kind: "payment_change_check", data: { verdict: "verify_first" } });
       return json(200, { jsonrpc: "2.0", id: rpc.id, result: { content: [{ type: "text", text }] } });
@@ -209,6 +221,64 @@ test("runChecks is red when a curl example calls a tool that is not in the live 
   const { fetch } = fakeSite({ tools: ["verify_iban"] });
   const r = await runChecks({ text: SKILL(), dirName: "demo-skill", fetch });
   assert.match(r.errors.join("\n"), /check_payment_change.*not in the live tools\/list/);
+});
+
+test("runChecks is red when tools/call arguments contain keys outside the live inputSchema", async () => {
+  const { fetch } = fakeSite();
+  const text = SKILL().replace('"newIban":"X"', '"newIban":"X","payment":{"iban":"BE71096123456769"}');
+  const r = await runChecks({ text, dirName: "demo-skill", fetch });
+  assert.match(r.errors.join("\n"), /argument payment is not in the live inputSchema of check_payment_change; the server drops it/);
+});
+
+test("runChecks checks nested object and array-item arguments where the live schema has properties", async () => {
+  const invoiceSchema = {
+    type: "object",
+    properties: {
+      supplier: { type: "object", properties: { name: { type: "string" } } },
+      lines: { type: "array", items: { type: "object", properties: { description: { type: "string" } } } },
+    },
+  };
+  const { fetch } = fakeSite({ tools: ["review_invoice"], toolSchemas: { review_invoice: invoiceSchema } });
+  const text = SKILL()
+    .replaceAll("check_payment_change", "review_invoice")
+    .replace('"newIban":"X"', '"supplier":{"name":"Seller","vatId":"BE1"},"lines":[{"description":"Work","lineTotal":10}]');
+  const r = await runChecks({ text, dirName: "demo-skill", fetch });
+  assert.match(r.errors.join("\n"), /argument supplier\.vatId is not in the live inputSchema of review_invoice; the server drops it/);
+  assert.match(r.errors.join("\n"), /argument lines\[0\]\.lineTotal is not in the live inputSchema of review_invoice; the server drops it/);
+});
+
+test("runChecks rejects all four legacy review_invoice fields when an older live schema drops them", async () => {
+  const legacySchema = {
+    type: "object",
+    properties: {
+      invoiceNumber: { type: "string" },
+      supplier: { type: "object", properties: { name: { type: "string" } } },
+      customer: { type: "object", properties: { name: { type: "string" } } },
+      lines: { type: "array", items: { type: "object", properties: { description: { type: "string" } } } },
+    },
+  };
+  const { fetch } = fakeSite({ tools: ["review_invoice"], toolSchemas: { review_invoice: legacySchema } });
+  const argumentsJson = JSON.stringify({
+    invoiceNumber: "2026-0917",
+    supplier: { name: "Seller" },
+    customer: { name: "Buyer" },
+    lines: [{ description: "Work" }],
+    totalWithoutVat: 8000,
+    totalVat: 2000,
+    totalWithVat: 10000,
+    payment: { iban: "DK27 5301 0244 5638 21" },
+  });
+  const text = SKILL()
+    .replaceAll("check_payment_change", "review_invoice")
+    .replace('{"newIban":"X"}', argumentsJson);
+  const r = await runChecks({ text, dirName: "demo-skill", fetch });
+  const dropped = r.errors.filter((error) => error.includes("server drops it"));
+  assert.deepEqual(dropped, [
+    "SKILL.md curl example 1: argument totalWithoutVat is not in the live inputSchema of review_invoice; the server drops it",
+    "SKILL.md curl example 1: argument totalVat is not in the live inputSchema of review_invoice; the server drops it",
+    "SKILL.md curl example 1: argument totalWithVat is not in the live inputSchema of review_invoice; the server drops it",
+    "SKILL.md curl example 1: argument payment is not in the live inputSchema of review_invoice; the server drops it",
+  ]);
 });
 
 test("runChecks is red when prose names a tool that is not live", async () => {

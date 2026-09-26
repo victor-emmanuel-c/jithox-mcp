@@ -197,7 +197,8 @@ node scripts/check-skill.mjs
 ```
 
 It checks the spec rules, runs each curl example, requires every tool it
-calls to be in the live `tools/list`, and fails on any price in the text.
+calls to be in the live `tools/list`, and fails on a euro sign, EUR, USD, a
+`$` amount or "<n> credits" in the text.
 
 ## Machine-readable pointers
 

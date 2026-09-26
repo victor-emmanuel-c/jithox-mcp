@@ -247,29 +247,53 @@ export function extractUrls(text) {
 
 /** Keys and whole identifier values of a live answer, JSON inside strings included; never words from free text. */
 export function collectGround(node, ground = new Set(ALWAYS_GROUND)) {
-  const walk = (value, key, isToolEntry) => {
+  const walk = (value, key, { isToolEntry = false, isToolReference = false } = {}) => {
     if (typeof value === "string") {
       const s = value.trim();
-      if (IDENT.test(s) && !(isToolEntry && key === "name")) ground.add(s);
+      if (IDENT.test(s) && !isToolReference && !(isToolEntry && key === "name")) ground.add(s);
       if (s.startsWith("{") || s.startsWith("[")) {
         try {
-          walk(JSON.parse(s), key, false);
+          walk(JSON.parse(s), key);
         } catch {
           // free text that happens to start with a bracket
         }
       }
       for (const m of value.matchAll(/`([A-Za-z][A-Za-z0-9]*)`/g)) ground.add(m[1]);
     } else if (Array.isArray(value)) {
-      for (const item of value) walk(item, key, key === "tools");
+      for (const item of value) {
+        walk(item, key, {
+          isToolEntry: key === "tools" && item && typeof item === "object",
+          isToolReference: key === "tools" && typeof item === "string",
+        });
+      }
     } else if (value && typeof value === "object") {
       for (const [k, v] of Object.entries(value)) {
         if (IDENT.test(k)) ground.add(k);
-        walk(v, k, isToolEntry && typeof v !== "object");
+        walk(v, k, { isToolEntry, isToolReference: k === "tool" });
       }
     }
   };
-  walk(node, null, false);
+  walk(node, null);
   return ground;
+}
+
+function unknownArguments(argumentsValue, schema, path = "") {
+  if (!argumentsValue || typeof argumentsValue !== "object" || !schema || typeof schema !== "object") return [];
+  if (Array.isArray(argumentsValue)) {
+    if (!schema.items) return [];
+    return argumentsValue.flatMap((item, index) => unknownArguments(item, schema.items, `${path}[${index}]`));
+  }
+  if (!schema.properties || typeof schema.properties !== "object") return [];
+  const errors = [];
+  for (const [key, value] of Object.entries(argumentsValue)) {
+    const childPath = path ? `${path}.${key}` : key;
+    if (!(key in schema.properties)) {
+      errors.push(childPath);
+      continue;
+    }
+    errors.push(...unknownArguments(value, schema.properties[key], childPath));
+  }
+  return errors;
 }
 
 function prose(md) {
@@ -368,6 +392,7 @@ export async function runChecks({ text, dirName, fetch = globalThis.fetch, extra
 
   // 3. live tools/list
   const toolNames = new Set();
+  const toolSchemas = new Map();
   const ground = new Set(ALWAYS_GROUND);
   try {
     const res = await fetch(mcpUrl, {
@@ -379,7 +404,11 @@ export async function runChecks({ text, dirName, fetch = globalThis.fetch, extra
     if (json === undefined) throw new Error(`answered HTTP ${res.status} ${type}, not JSON`);
     const tools = json?.result?.tools;
     if (!Array.isArray(tools)) throw new Error(`answered without result.tools (HTTP ${res.status})`);
-    for (const t of tools) if (typeof t?.name === "string") toolNames.add(t.name);
+    for (const t of tools) {
+      if (typeof t?.name !== "string") continue;
+      toolNames.add(t.name);
+      toolSchemas.set(t.name, t.inputSchema);
+    }
     collectGround(json, ground);
     info.push(`live tools/list: ${toolNames.size} tools`);
   } catch (e) {
@@ -403,6 +432,16 @@ export async function runChecks({ text, dirName, fetch = globalThis.fetch, extra
       }
       for (const tool of ex.toolNames) {
         if (!toolNames.has(tool)) errors.push(`${where}: tool ${tool} is not in the live tools/list of ${mcpUrl}`);
+      }
+      try {
+        const rpc = JSON.parse(ex.body ?? "");
+        if (rpc?.method === "tools/call" && typeof rpc.params?.name === "string") {
+          for (const path of unknownArguments(rpc.params.arguments, toolSchemas.get(rpc.params.name))) {
+            errors.push(`${where}: argument ${path} is not in the live inputSchema of ${rpc.params.name}; the server drops it`);
+          }
+        }
+      } catch {
+        // The live request below reports unreadable or non-JSON bodies.
       }
       const send = { ...base };
       for (const h of ["content-type", "accept"]) if (ex.headers[h] !== undefined) send[h] = ex.headers[h];
