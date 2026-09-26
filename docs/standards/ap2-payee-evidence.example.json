@@ -1,0 +1,40 @@
+{
+  "_about": "A closed AP2 v0.2 Payment Mandate claim set (unsigned here) whose risk_data carries one payee_evidence entry. The jws is real: check_payment_change on https://jithox.com/api/mcp, 2026-09-24T12:47:58Z. The IBANs are publicly documented example numbers, not a person's account.",
+  "payment_mandate": {
+    "vct": "mandate.payment.1",
+    "transaction_id": "SacnSP3FZTJEvvhdB45gyLRNdpWb6q5dNrGK2flTnX0",
+    "payee": {
+      "id": "supplier-4711",
+      "name": "Example Supplier BV",
+      "website": "https://supplier.example"
+    },
+    "payment_amount": {
+      "amount": 125000,
+      "currency": "EUR"
+    },
+    "payment_instrument": {
+      "id": "pi-example-1",
+      "type": "sepa_credit_transfer",
+      "description": "Illustrative only: AP2 v0.2 defines no SEPA instrument type"
+    },
+    "risk_data": {
+      "payee_evidence": [
+        {
+          "format": "compact-jws",
+          "jws": "eyJhbGciOiJFZERTQSIsImtpZCI6ImtRSWwtVkZoRFc0TWFWUlVhczRfUTZ3Sm56ekdFbnJ3UEdwUUZPRUM1NXciLCJ0eXAiOiJqaXRob3gtZXZpZGVuY2UrandzIn0.eyJ2IjoxLCJpc3MiOiJodHRwczovL2ppdGhveC5jb20iLCJraW5kIjoicGF5bWVudF9jaGFuZ2VfY2hlY2siLCJpc3N1ZWRBdCI6IjIwMjYtMDktMjRUMTI6NDc6NTguMzQwWiIsInZlcmRpY3QiOiJzdG9wIiwiY2hlY2tzIjpbeyJpZCI6Im5ld19hY2NvdW50X2liYW4iLCJzdGF0dXMiOiJwYXNzIiwic291cmNlIjoibG9jYWw6aWJhbi1yZWdpc3RyeSJ9LHsiaWQiOiJhY2NvdW50X29uX2ZpbGVfaWJhbiIsInN0YXR1cyI6InBhc3MiLCJzb3VyY2UiOiJsb2NhbDppYmFuLXJlZ2lzdHJ5In0seyJpZCI6InNhbWVfYWNjb3VudF9hc19vbl9maWxlIiwic3RhdHVzIjoiZmFpbCIsInNvdXJjZSI6ImxvY2FsOnBheW1lbnQtY2hhbmdlLXJ1bGVzIn0seyJpZCI6ImFjY291bnRfY291bnRyeV9tYXRjaGVzX3N1cHBsaWVyIiwic3RhdHVzIjoiZmFpbCIsInNvdXJjZSI6ImxvY2FsOnBheW1lbnQtY2hhbmdlLXJ1bGVzIn0seyJpZCI6ImFjY291bnRfY291bnRyeV91bmNoYW5nZWQiLCJzdGF0dXMiOiJmYWlsIiwic291cmNlIjoibG9jYWw6cGF5bWVudC1jaGFuZ2UtcnVsZXMifSx7ImlkIjoiYmFua191bmNoYW5nZWQiLCJzdGF0dXMiOiJza2lwcGVkIiwic291cmNlIjoibG9jYWw6cGF5bWVudC1jaGFuZ2UtcnVsZXMifV0sImlucHV0RGlnZXN0Ijoic2hhMjU2OmM0Y2VlMjdlNzBmNDI2NmJmMTJhZGY4Y2EzMzAzOWE3YjVkNzgzOWExNDFkMjQxYTFjOTQ5ZmMxMTZlODcxOWYiLCJ0b29sVmVyc2lvbiI6ImNoZWNrX3BheW1lbnRfY2hhbmdlQDErY2U2MDFkZDkzNjc1Iiwia2lkIjoia1FJbC1WRmhEVzRNYVZSVWFzNF9RNndKbnp6R0VucndQR3BRRk9FQzU1dyJ9.nu8uaTg1XiXWrNN1Pv9QKZbHs74dd6HRO8V9Eu_EzjQbydPOGK9rFDbmUmIeoZi6p5WSM7kDoWipm5UqVpFrDA",
+          "payee_id": "supplier-4711"
+        }
+      ]
+    },
+    "iat": 1790254080,
+    "exp": 1790254980
+  },
+  "disclosure_for_the_executing_party": {
+    "input": {
+      "newIban": "GB33BUKB20201555555555",
+      "ibanOnFile": "BE68539007547034",
+      "supplierCountry": "BE"
+    },
+    "salt": "wevlFz9-EBfxGVDy7H1QkQ"
+  }
+}
