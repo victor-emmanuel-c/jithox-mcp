@@ -1,0 +1,7 @@
+2.1.278 (Claude Code)
+Validating plugin manifest: C:\Users\victo\Projects\jithox-mcp\.worktrees\t_bc51b642\plugins\claude-payee-hook\.claude-plugin\plugin.json
+
+✔ Validation passed
+Validating marketplace manifest: C:\Users\victo\Projects\jithox-mcp\.worktrees\t_bc51b642\.claude-plugin\marketplace.json
+
+✔ Validation passed

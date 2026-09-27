@@ -1,7 +1,7 @@
 # claude-payee-hook (experimental)
 
 A deterministic Claude Code / Agent SDK plugin that runs before payment-like
-MCP tools. It compares IBAN-shaped candidates with this hook's local history
+MCP tools. It compares structured payment IBANs with this hook's local history
 using Jithox `check_payment_change`. It makes no payment itself.
 
 This is a distribution experiment, not demonstrated market demand. A useful
@@ -75,6 +75,7 @@ proof that a particular SDK application enforces these decisions.
 | `JITHOX_PAYEE_PYTHON` | Optional executable path; otherwise `python3`, then `python`. |
 | `JITHOX_PAYEE_MEMORY_DIR` | Absolute `~/.claude-payee-hook` under the executing user's home. Its parent must already exist. Do not use a shared/project directory. |
 | `JITHOX_PAYEE_FIELDS` | `name,naam,creditor,beneficiary`; comma-separated, case-sensitive dot paths into tool input. Example: `recipient.vendor_id`. Exactly one distinct, nonempty string value must be found. |
+| `JITHOX_PAYMENT_IBAN_FIELDS` | Optional comma-separated extra payment leaf names, case-insensitive, e.g. `settlementAccount,accountNumber`. Extends the six defaults below; never read from tool input. At most 16 extra names, each 1–128 ASCII letters/digits/underscores/hyphens; whitespace around names is trimmed. Reserved fields below cannot be enabled. Invalid configuration asks without sending data or updating memory. |
 | `JITHOX_PAYEE_TOOL_PATTERN` | Case-insensitive Python regex: `^mcp__.+__.*(?:transfer\|send\|pay\|payment\|wire\|payout\|charge\|withdraw).*`. Use actual payment-tool names to avoid overmatching. |
 
 The JSON hook matcher invokes the script for `mcp__.*`; the script applies
@@ -91,14 +92,25 @@ Choose a stable supplier ID field rather than a display name where possible.
 
 ## Decision contract
 
-The script walks strings in nested objects and arrays, extracts compact or
-space/hyphen-grouped IBAN candidates, uppercases them and checks mod-97. It
-is a conservative text heuristic, not a parser for every bank's payment schema.
-Malformed candidates are not silently treated as an absent account.
+Only string leaves named `iban`, `newIban`, `beneficiaryIban`, `recipientIban`,
+`destinationIban` or `creditorIban` (case-insensitive), plus explicitly configured
+local extra names, are payment candidates. Nested objects and arrays of objects
+are traversed, but bare array strings are not payment fields. Each recognized
+leaf must contain one whole compact or space/hyphen-grouped account-shaped
+value; the hook does not search inside prose. Values are uppercased and checked
+with mod-97 before any network request. An account-shaped value with a bad
+checksum still gets the existing local `deny`, never a remote request.
+
+`ibanOnFile`, `description`, `prompt`, `message`, `notes` and `reference` are
+always excluded, including their subtrees and any attempt to enable them in
+local configuration. Other unknown string fields are ignored. A tool-input
+field named `JITHOX_PAYMENT_IBAN_FIELDS` does not configure anything. No
+recognized candidate means **Jithox checked nothing**, not an account approval.
+This is a bounded structured-field selector, not support for every bank schema.
 
 | Observation | PreToolUse result |
 | --- | --- |
-| No IBAN candidate | No permission decision; `systemMessage` says **Jithox checked nothing**. Other permission checks still apply. |
+| No structured payment IBAN candidate | No permission decision; `systemMessage` says **Jithox checked nothing**. Other permission checks still apply. |
 | Local mod-97 failure | `deny`, `invalid_new_account`; no remote request for that candidate. |
 | `stop` or `invalid_new_account` from Jithox | `deny` |
 | `verify_first` | `ask` |
@@ -126,10 +138,12 @@ business-authorization controls. See Claude's decision semantics in the
 
 PreToolUse is read-only. `ibanOnFile` in the outgoing request is read only
 from `payees.json`, never from an identically named field or a sentence in
-`tool_input`. Incoming reference-like strings are still scanned as candidates;
-they cannot replace the locally trusted comparison value.
+`tool_input`. Caller reference fields and free text are not payment candidates
+and do not generate additional checks or alter the unchanged payment's decision.
 
-PostToolUse does **not** call Jithox. It remembers one account only when there
+PostToolUse uses the same structured-field selector on that successful call's
+`tool_input`, never on accounts in the response. It does **not** call Jithox.
+It remembers one account only when there
 is one unambiguous payee and one mod-97-valid candidate, and the tool reports
 explicit success: `success: true`, `ok: true`, or `status` equal to `succeeded`,
 `completed` or `paid`. The same markers can be inside a single MCP JSON text
@@ -161,7 +175,7 @@ history (names/IDs and complete IBANs) in git or share it with the model.
 
 ## Privacy and limits
 
-Only current IBAN candidates that pass mod-97, the associated stored IBAN when
+Only recognized structured payment IBANs that pass mod-97, the associated stored IBAN when
 present, and an optional two-letter supplier country go to `jithox.com` over
 HTTPS. No supplier name, amount, invoice, tool name, conversation or transcript
 is sent. The hook emits no extra telemetry beyond its
@@ -201,6 +215,9 @@ python tests/claude_payee/probe.py --probe t_edd8a743
 
 Do not run that command as a traffic generator. The marker excludes our own
 probe from external adoption. [VERIFICATION.md](VERIFICATION.md) records the
-actual Windows/WSL/CLI results, skips, six mutant test names and live observation.
+original Windows/WSL/CLI results and live observation. [F1-VERIFICATION.md](F1-VERIFICATION.md)
+records the structured-field fix, new Windows/WSL runs, real loopback wire capture
+and twelve mutants. Run `python tests/claude_payee/test_wire.py` to reproduce
+that offline HTTP capture without sending anything to Jithox.
 All Jithox request/envelope handling is in `askJithox`; a future service change
 belongs there, not in payment-tool-specific branches.

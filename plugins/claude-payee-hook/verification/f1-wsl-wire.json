@@ -1,0 +1,73 @@
+{
+  "transport": "real loopback HTTP; no Jithox traffic",
+  "cases": [
+    {
+      "case": "ibanOnFile",
+      "requests": 1,
+      "raw_request_equal": true,
+      "decision_equal": true,
+      "unrelated_account_sent": false
+    },
+    {
+      "case": "description",
+      "requests": 1,
+      "raw_request_equal": true,
+      "decision_equal": true,
+      "unrelated_account_sent": false
+    },
+    {
+      "case": "prompt",
+      "requests": 1,
+      "raw_request_equal": true,
+      "decision_equal": true,
+      "unrelated_account_sent": false
+    },
+    {
+      "case": "message",
+      "requests": 1,
+      "raw_request_equal": true,
+      "decision_equal": true,
+      "unrelated_account_sent": false
+    },
+    {
+      "case": "notes",
+      "requests": 1,
+      "raw_request_equal": true,
+      "decision_equal": true,
+      "unrelated_account_sent": false
+    },
+    {
+      "case": "reference",
+      "requests": 1,
+      "raw_request_equal": true,
+      "decision_equal": true,
+      "unrelated_account_sent": false
+    },
+    {
+      "case": "unknown",
+      "requests": 1,
+      "raw_request_equal": true,
+      "decision_equal": true,
+      "unrelated_account_sent": false
+    },
+    {
+      "case": "unknown_only",
+      "requests": 0,
+      "decision": "none"
+    },
+    {
+      "case": "local_extra_field",
+      "requests": 1,
+      "raw_request_equal": true,
+      "decision_equal": true
+    }
+  ],
+  "user_agent": "claude-payee-hook/0.1.0",
+  "probe_header": false,
+  "argument_keys": [
+    "ibanOnFile",
+    "newIban",
+    "supplierCountry"
+  ],
+  "baseline_requests": 1
+}

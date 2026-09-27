@@ -68,7 +68,7 @@ https://code.claude.com/docs/en/hooks#posttooluse-input, retrieved 2026-09-26.
 | --- | --- |
 | `hook_event_name` | Must agree with the fixed launcher stage. |
 | `tool_name` | Actual tool name; used by matcher and local namespace. |
-| `tool_input` | Tool-specific argument object; recursively searched for candidate strings. |
+| `tool_input` | Tool-specific argument object; only recognized structured payment leaf fields are selected under our local policy, not an upstream payment schema. |
 | `tool_response` | PostToolUse result, tool-specific. Our explicit-success rules are **our policy**, not a universal upstream payment schema. |
 
 Other common fields (`session_id`, `transcript_path`, `cwd`, `tool_use_id`,

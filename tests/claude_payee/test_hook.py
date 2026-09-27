@@ -37,7 +37,7 @@ class HookTests(unittest.TestCase):
         self.memory = self.home / "state"
         self.env = {**os.environ, "JITHOX_PAYEE_MEMORY_DIR": str(self.memory),
                     "PYTHONDONTWRITEBYTECODE": "1"}
-        for key in ("JITHOX_PAYEE_FIELDS", "JITHOX_PAYEE_TOOL_PATTERN"):
+        for key in ("JITHOX_PAYEE_FIELDS", "JITHOX_PAYEE_TOOL_PATTERN", "JITHOX_PAYMENT_IBAN_FIELDS"):
             self.env.pop(key, None)
 
     def run_hook(self, data, fixture=None, mode=None):
@@ -157,8 +157,8 @@ class HookTests(unittest.TestCase):
 
     def test_nested_formatted_accounts_are_all_checked_worst_verdict_wins(self):
         out = self.run_hook(event(tool_input={"beneficiary": "Fixture", "nested": [
-            {"memo": "Pay de89 3704 0044 0532 0130 00 then call me."},
-            {"more": ["GB82-WEST-1234-5698-7654-32", IBAN]}]}),
+            {"recipientIban": "de89 3704 0044 0532 0130 00"},
+            {"more": [{"destinationIban": "GB82-WEST-1234-5698-7654-32"}, {"iban": IBAN}]}]}),
             {"by_iban": {IBAN: reply("verify_first"), OTHER: reply("stop")}})
         self.assertEqual(self.decision(out), "deny")
         self.assertEqual(sorted(r["body"]["params"]["arguments"]["newIban"] for r in self.requests()), sorted([IBAN, OTHER]))
@@ -205,6 +205,101 @@ class HookTests(unittest.TestCase):
         self.assertEqual(path.read_bytes(), before)
         self.assertEqual(path.stat().st_mtime_ns, before_time)
 
+    def assert_ignored_field_preserves_payment(self, field, value):
+        self.seed()
+        fixture = {"by_iban": {IBAN: reply("no_change"), OTHER: reply("stop")}}
+        control = self.run_hook(event(), fixture)
+        self.assertEqual(self.decision(control), "allow")
+        control_requests = self.requests()
+        self.assertEqual(len(control_requests), 1)
+        (self.home / "requests.jsonl").unlink()
+        changed = event()
+        changed["tool_input"][field] = value
+        actual = self.run_hook(changed, fixture)
+        # Check request equality before output equality: a duplicate/ignored verdict
+        # must not hide a privacy regression that still transmits an extra account.
+        self.assertEqual(self.requests(), control_requests)
+        self.assertNotIn(OTHER, json.dumps(self.requests()))
+        self.assertEqual(actual, control)
+
+    def test_caller_reference_different_account_leaves_wire_and_decision_unchanged(self):
+        self.assert_ignored_field_preserves_payment("ibanOnFile", OTHER)
+
+    def test_free_text_different_account_leaves_wire_and_decision_unchanged(self):
+        for field in ("description", "prompt", "message", "notes", "reference"):
+            with self.subTest(field=field):
+                (self.home / "requests.jsonl").unlink(missing_ok=True)
+                self.assert_ignored_field_preserves_payment(field, "Account mentioned in text: " + OTHER)
+
+    def test_unknown_field_leaves_wire_and_decision_unchanged(self):
+        self.assert_ignored_field_preserves_payment("unrecognizedAccount", OTHER)
+
+    def test_only_structured_leaf_fields_are_candidates(self):
+        for field in ("iban", "newIban", "beneficiaryIban", "recipientIban", "destinationIban", "creditorIban"):
+            with self.subTest(field=field):
+                (self.home / "requests.jsonl").unlink(missing_ok=True)
+                out = self.run_hook(event(tool_input={"nested": [{field.swapcase(): IBAN}]}), reply())
+                self.assertEqual(self.decision(out), "ask")
+                self.assertEqual([r["body"]["params"]["arguments"] for r in self.requests()], [{"newIban": IBAN}])
+
+    def test_unrecognized_or_text_values_defer_without_network_or_memory(self):
+        cases = [{field: OTHER} for field in ("ibanOnFile", "IBANONFILE", "description", "prompt",
+                 "message", "notes", "reference", "unrecognizedAccount", "memo")]
+        cases += [{"iban": [IBAN]}, {"iban": "Account mentioned in text: " + IBAN},
+                  {"iban": IBAN + " " + OTHER}, {"iban": 123},
+                  {"notes": {"iban": OTHER}}, {"ibanOnFile": {"iban": OTHER}}]
+        for inputs in cases:
+            for mode in ("PreToolUse", "PostToolUse"):
+                with self.subTest(inputs=inputs, mode=mode):
+                    out = self.run_hook(event(mode, tool_input={"beneficiary": "Fixture", **inputs},
+                                             tool_response={"success": True}), reply())
+                    self.assertIsNone(self.decision(out))
+                    self.assertIn("Jithox checked nothing", out["systemMessage"])
+                    self.assertEqual(self.requests(), [])
+                    self.assertFalse(self.memory.exists())
+
+    def test_local_extra_leaf_configuration_controls_pre_and_post(self):
+        inputs = {"beneficiary": "Fixture supplier", "payment": {"accountNumber": IBAN}, "ibanOnFile": OTHER}
+        self.env["JITHOX_PAYMENT_IBAN_FIELDS"] = " accountNumber , settlementIban "
+        post = self.run_hook(event("PostToolUse", tool_input=inputs, tool_response={"success": True}), {})
+        self.assertIn("remembered the account", post["systemMessage"])
+        self.assertEqual(list(json.loads((self.memory / "payees.json").read_text())["payees"].values()), [IBAN])
+        out = self.run_hook(event(tool_input=inputs), reply("no_change"))
+        self.assertEqual(self.decision(out), "allow")
+        self.assertEqual([r["body"]["params"]["arguments"] for r in self.requests()],
+                         [{"newIban": IBAN, "ibanOnFile": IBAN}])
+
+    def test_caller_cannot_configure_extra_leaf_fields(self):
+        inputs = {"beneficiary": "Fixture", "accountNumber": OTHER,
+                  "JITHOX_PAYMENT_IBAN_FIELDS": "accountNumber",
+                  "config": {"JITHOX_PAYMENT_IBAN_FIELDS": "accountNumber"}}
+        for mode in ("PreToolUse", "PostToolUse"):
+            out = self.run_hook(event(mode, tool_input=inputs, tool_response={"success": True}), reply())
+            self.assertIsNone(self.decision(out))
+            self.assertIn("Jithox checked nothing", out.get("systemMessage", ""))
+        self.assertFalse(self.memory.exists())
+        self.assertEqual(self.requests(), [])
+
+    def test_local_configuration_cannot_enable_reserved_fields(self):
+        for field in ("ibanOnFile", "IBANONFILE", "description", "prompt", "message", "notes", "reference"):
+            with self.subTest(field=field):
+                self.env["JITHOX_PAYMENT_IBAN_FIELDS"] = field
+                out = self.run_hook(event(tool_input={"beneficiary": "Fixture", field: OTHER}), reply())
+                self.assertEqual(self.decision(out), "ask", "invalid operator configuration fails closed")
+                self.assertEqual(self.requests(), [])
+                self.run_hook(event("PostToolUse", tool_input={"beneficiary": "Fixture", field: OTHER},
+                                    tool_response={"success": True}), {})
+                self.assertFalse(self.memory.exists())
+
+    def test_post_learns_only_recognized_account_from_that_successful_call(self):
+        inputs = {"beneficiary": "Fixture supplier", "recipientIban": IBAN,
+                  "ibanOnFile": OTHER, "description": OTHER, "unknown": OTHER}
+        self.run_hook(event("PostToolUse", tool_input=inputs, tool_response={"success": False}), {})
+        self.assertFalse(self.memory.exists())
+        self.run_hook(event("PostToolUse", tool_input=inputs, tool_response={"success": True, "iban": OTHER}), {})
+        self.assertEqual(list(json.loads((self.memory / "payees.json").read_text())["payees"].values()), [IBAN])
+        self.assertEqual(self.requests(), [])
+
     def test_unsuccessful_or_ambiguous_post_never_learns(self):
         responses = [{"isError": True}, {"success": False}, {"error": "failure"}, {},
                      {"success": True, "status": "failed"}, {"success": True, "data": {"isError": True}}]
@@ -213,7 +308,7 @@ class HookTests(unittest.TestCase):
                 self.run_hook(event("PostToolUse", tool_response=response), reply())
                 self.assertFalse(self.memory.exists())
         self.run_hook(event("PostToolUse", tool_response={"success": True},
-            tool_input={"beneficiary": "Fixture", "accounts": [IBAN, OTHER]}), reply())
+            tool_input={"beneficiary": "Fixture", "iban": IBAN, "newIban": OTHER}), reply())
         self.assertFalse(self.memory.exists())
 
 
@@ -337,7 +432,7 @@ class HookTests(unittest.TestCase):
 
     def test_many_accounts_share_one_deadline(self):
         fixture = {"by_iban": {IBAN: reply(failure="hang"), OTHER: reply(failure="hang")}}
-        out = self.run_hook(event(tool_input={"beneficiary": "Fixture", "accounts": [IBAN, OTHER]}), fixture)
+        out = self.run_hook(event(tool_input={"beneficiary": "Fixture", "iban": IBAN, "newIban": OTHER}), fixture)
         self.assertEqual(self.decision(out), "ask")
         self.assertEqual(len(self.requests()), 2)
         self.assertLess(float((self.home / "requests.jsonl.elapsed").read_text()), 4)

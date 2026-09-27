@@ -1,5 +1,11 @@
 # Verification — t_edd8a743
 
+Historical build evidence, not acceptance of the current trust boundary.
+Review t_143a577a found that arbitrary caller strings became extra payment
+candidates despite the local-only comparison reference. That finding and its
+test-first fix are recorded in [F1-VERIFICATION.md](F1-VERIFICATION.md); use that
+report for the current structured-field extraction and test/mutant totals.
+
 Date: 2026-09-26. Branch: `jx/claude-payee-hook`.
 Started from the requested clean `cbaab86` basis, not the separate skill branch.
 The exact delivered commit is the build-card handoff / branch head; a document

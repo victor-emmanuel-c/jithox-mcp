@@ -19,6 +19,9 @@ LIMIT = 256 * 1024
 DEFAULT_PATTERN = r"^mcp__.+__.*(?:transfer|send|pay|payment|wire|payout|charge|withdraw).*"
 FALLBACK = "Jithox unavailable or unreadable; verify by calling the supplier using your own records."
 IBAN_TEXT = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]{2}[0-9]{2}[A-Za-z0-9]*(?:[\s-]+[A-Za-z0-9]{1,4}(?![A-Za-z0-9]))*")
+PAYMENT_IBAN_FIELDS = frozenset({"iban", "newiban", "beneficiaryiban", "recipientiban", "destinationiban", "creditoriban"})
+EXCLUDED_FIELDS = frozenset({"ibanonfile", "description", "prompt", "message", "notes", "reference"})
+IBAN_VALUE = re.compile(r"[A-Za-z]{2}[0-9]{2}(?:[\s-]*[A-Za-z0-9]){11,30}")
 
 
 def mod97(iban):
@@ -29,27 +32,35 @@ def mod97(iban):
 
 
 def candidates(value):
-    if isinstance(value, str):
-        found = []
-        consumed = 0
-        for start in re.finditer(r"(?<![A-Za-z0-9])[A-Za-z]{2}[0-9]{2}", value):
-            if start.start() < consumed:
-                continue
-            match = IBAN_TEXT.match(value, start.start())
-            assert match is not None
-            iban = ""
-            for part in re.finditer(r"[A-Za-z0-9]+", match.group()):
-                iban += part.group().upper()
-                if mod97(iban):
-                    consumed = match.start() + part.end()
-                    break
-            found.append(iban)
-        return list(dict.fromkeys(found))
-    if isinstance(value, dict):
-        value = list(value.values())
-    if isinstance(value, list):
-        return list(dict.fromkeys(iban for item in value for iban in candidates(item)))
-    return []
+    """Select structured payment leaves; never search arbitrary input text.
+
+    Checksum-invalid account-shaped leaves remain local deny candidates. Only
+    mod-97-valid accounts can reach askJithox or successful-post memory.
+    """
+    configured = os.environ.get("JITHOX_PAYMENT_IBAN_FIELDS", "")
+    extra = [field.strip().lower() for field in configured.split(",")] if configured.strip() else []
+    if (len(extra) > 16 or any(not re.fullmatch(r"[a-z0-9_-]{1,128}", field) for field in extra)
+            or EXCLUDED_FIELDS.intersection(extra)):
+        raise ValueError("invalid payment IBAN field configuration")
+    fields = PAYMENT_IBAN_FIELDS.union(extra)
+    found = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, item in node.items():
+                field = key.lower()
+                if field in EXCLUDED_FIELDS:
+                    continue
+                if field in fields and isinstance(item, str) and IBAN_VALUE.fullmatch(item.strip()):
+                    found.append(re.sub(r"[\s-]", "", item).upper())
+                elif isinstance(item, (dict, list)):
+                    walk(item)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(value)
+    return list(dict.fromkeys(found))
 
 
 def askJithox(new_iban, on_file=None, country=None, *, probe=None):
@@ -345,7 +356,7 @@ def handle(data, mode):
         return {}
     ibans = candidates(inputs)
     if not ibans:
-        return {"systemMessage": "Jithox checked nothing: no IBAN found."}
+        return {"systemMessage": "Jithox checked nothing: no structured payment IBAN found."}
     if len(ibans) > 16:
         raise ValueError("too many account candidates")
     key = payee_key(data)

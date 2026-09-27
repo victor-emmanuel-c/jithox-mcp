@@ -1,4 +1,4 @@
-"""Run six local safety mutants in disposable copies, never editing the plugin."""
+"""Run local safety mutants in disposable copies, never editing the plugin."""
 import json
 import os
 from pathlib import Path
@@ -28,6 +28,24 @@ mutants = [
     ("follow_memory_link", 'with memory_directory(directory) as fd:',
      'return json.loads((directory / "payees.json").read_text(encoding="utf-8"))\n        with memory_directory(directory) as fd:',
      ["test_memory_parent_link_is_refused", "test_memory_symlink_is_never_read_or_written"]),
+    ("unknown_leaf_allowed", 'if field in fields and isinstance(item, str) and IBAN_VALUE.fullmatch(item.strip()):',
+     'if isinstance(item, str) and IBAN_VALUE.fullmatch(item.strip()):',
+     ["test_unknown_field_leaves_wire_and_decision_unchanged"]),
+    ("ignore_local_fields", 'configured = os.environ.get("JITHOX_PAYMENT_IBAN_FIELDS", "")',
+     'configured = ""',
+     ["test_local_extra_leaf_configuration_controls_pre_and_post"]),
+    ("caller_configures_fields", 'configured = os.environ.get("JITHOX_PAYMENT_IBAN_FIELDS", "")',
+     'configured = value.get("JITHOX_PAYMENT_IBAN_FIELDS", os.environ.get("JITHOX_PAYMENT_IBAN_FIELDS", ""))',
+     ["test_caller_cannot_configure_extra_leaf_fields"]),
+    ("reserved_fields_enabled", 'EXCLUDED_FIELDS = frozenset({"ibanonfile", "description", "prompt", "message", "notes", "reference"})',
+     'EXCLUDED_FIELDS = frozenset()',
+     ["test_local_configuration_cannot_enable_reserved_fields"]),
+    ("post_uses_response_accounts", 'ibans = candidates(inputs)',
+     'ibans = candidates(data.get("tool_response", inputs) if mode == "PostToolUse" else inputs)',
+     ["test_post_learns_only_recognized_account_from_that_successful_call"]),
+    ("best_verdict_wins", 'kind = max((item[0] for item in results)',
+     'kind = min((item[0] for item in results)',
+     ["test_nested_formatted_accounts_are_all_checked_worst_verdict_wins"]),
 ]
 
 
