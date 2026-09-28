@@ -218,19 +218,45 @@ is about to pay a supplier invoice or change a supplier's bank account. It
 teaches the agent to call `check_payment_change` on every new IBAN and to hold
 the payment for a call-back by a person, to check the invoice with the free
 `POST /api/invoice/review`, and to check VAT numbers against the EU VIES
-register with the paid `review_invoice`. Copy the folder into your agent's
-skills directory.
+register with the paid `review_invoice`.
 
-Every example in the skill runs against production. To check that it still
-does (Node 18+, no dependencies):
+It is written for three triggers: every supplier bank change, every invoice
+IBAN that differs from the vendor record, and every payment run.
+
+### Install from a clean folder
+
+Set `SKILLS_DIR` to the skills directory that the documentation of your own
+Agent-Skills-compatible client names. This repository does not know that path
+for any client; do not guess it. Then run this in a POSIX shell (Git Bash on
+Windows works), with git and Node 18+ installed. It pins the public repository
+at commit `9193a770320aa144e66e8630c830be33858f21ad`, the `main` head
+measured on 2026-09-28; use a newer commit only after you have reviewed it.
 
 ```
-node scripts/check-skill.mjs
+SKILLS_DIR=                     # absolute path from your client's documentation
+: "${SKILLS_DIR:?set SKILLS_DIR before copying}" &&
+SRC=$(mktemp -d) &&
+git -C "$SRC" init -q &&
+git -C "$SRC" fetch -q --depth 1 https://github.com/victor-emmanuel-c/jithox-mcp.git 9193a770320aa144e66e8630c830be33858f21ad &&
+git -C "$SRC" checkout -q FETCH_HEAD &&
+mkdir -p "$SKILLS_DIR" &&
+cp -R "$SRC/skills/pay-invoices-safely" "$SKILLS_DIR/" &&
+(cd "$SRC" && node scripts/check-skill.mjs skills/pay-invoices-safely)
 ```
 
-It checks the spec rules, runs each curl example, requires every tool it
-calls to be in the live `tools/list`, and fails on a euro sign, EUR, USD, a
-`$` amount or "<n> credits" in the text.
+If `SKILLS_DIR` is empty the flow stops with a non-zero status before anything
+is fetched or copied. Otherwise it copies exactly `skills/pay-invoices-safely`
+(`SKILL.md` and `references/examples.md`) to `$SKILLS_DIR/pay-invoices-safely`,
+overwriting files of the same name there.
+
+The last command checks the source copy, not your installed one: it verifies
+the spec rules, runs each curl example against production (free, read-only
+HTTP calls), requires every tool it calls to be in the live `tools/list`, and
+fails on a euro sign, EUR, USD, a `$` amount or "<n> credits" in the text.
+
+A clone, a copy and our own checker show that the files can be fetched and
+that the examples still run. They do not show that any agent loaded the skill,
+completed a task with it, or used it a second time.
 
 ## Machine-readable pointers
 
