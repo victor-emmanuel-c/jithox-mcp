@@ -128,8 +128,7 @@ Called without a token they return a `payment_required` error that names the
 token URL — nothing runs and nothing is charged.
 
 **Limits:** 30 requests per minute per IP on this endpoint; above that you get
-HTTP `429` with `Retry-After`. Every answer carries a `doesNotProve` field or a
-stated limit — read it before you act on a result.
+HTTP `429` with `Retry-After`.
 
 ## Three calls, all run against production on 2026-09-23
 
