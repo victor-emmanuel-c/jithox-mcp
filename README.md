@@ -198,6 +198,15 @@ so.
   ```
 - [`examples/python/free_tools.py`](examples/python/free_tools.py) — standard
   library only: `initialize`, `tools/list`, then `verify_iban`.
+- [`examples/csharp/Program.cs`](examples/csharp/Program.cs) — .NET Framework 4.x,
+  no packages: `initialize`, then the free `check_payment_change` with fictitious
+  Belgian accounts. Prints the server, verdict, reason, human steps and
+  `doesNotProve` from the response (`charged` only when supplied). HTTP timeout:
+  15 seconds; HTTP, JSON-RPC, tool errors and missing/invalid result fields exit
+  nonzero. From `examples/csharp`, compile with
+  `csc /nologo /r:System.Net.Http.dll /r:System.Runtime.Serialization.dll Program.cs`,
+  run offline checks with `Program.exe --self-test`, then the live example with
+  `Program.exe`. Exit 0 means a valid response, not permission to pay.
 - [`examples/dogfood/`](examples/dogfood/DOGFOOD_VOORBEELD_2026-09.md) — our own
   dogfood example (in Dutch): the paid `check_vat_list` on the VAT number of an invoice we received.
 
