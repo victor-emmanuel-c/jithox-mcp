@@ -24,6 +24,12 @@ Zonder jx.py: POST deze body naar `https://jithox.com/api/mcp`, met `Authorizati
 ```
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"check_vat_list","arguments":{"rows":[{"reference":"Shopify Billing","vatId":"IE3347697KH"}],"requesterVatId":"BE1039898594"}}}
 ```
+`check_vat_list` is betaald en vereist daarom een kortlevend bearer-token.
+Een persoon maakt gratis een Jithox connection op `https://jithox.com/mcp/account#connection`.
+De agent wisselt connection-id + secret uit bij `https://jithox.com/api/oauth/token` met `grant_type=client_credentials`.
+Een OAuth-capabele MCP-client volgt de HTTP 401 `WWW-Authenticate`/`resource_metadata`-challenge.
+Gratis tools op `https://jithox.com/api/mcp` vereisen geen account of token.
+
 De Commissie registreert de raadpleging op het requesterVatId dat je meestuurt (BE1039898594 is ons eigen btw-nummer).
 
 Het echte antwoord (ingekort; het volledige antwoord staat in de .json)

@@ -22,7 +22,7 @@
     "tijd_utc": "2026-09-24T08:47:16Z",
     "endpoint": "https://jithox.com/api/mcp (tools/call)",
     "client": "jx.py, onze interne client; markeert elke call als eigen verkeer, zodat die niet als externe agent telt",
-    "zonder_jx_py": "POST https://jithox.com/api/mcp met Authorization: Bearer <token>, Content-Type: application/json en Accept: application/json, text/event-stream; body: {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"check_vat_list\",\"arguments\":<argumenten>}}",
+    "zonder_jx_py": "POST https://jithox.com/api/mcp met Authorization: Bearer <token>, Content-Type: application/json en Accept: application/json, text/event-stream; body: {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"check_vat_list\",\"arguments\":<argumenten>}}. check_vat_list is betaald en vereist daarom een kortlevend bearer-token. Een persoon maakt gratis een Jithox connection op https://jithox.com/mcp/account#connection. De agent wisselt connection-id + secret uit bij https://jithox.com/api/oauth/token met grant_type=client_credentials. Een OAuth-capabele MCP-client volgt de HTTP 401 WWW-Authenticate/resource_metadata-challenge. Gratis tools op https://jithox.com/api/mcp vereisen geen account of token.",
     "commando": "python jx.py check_vat_list '<argumenten>'",
     "tool": "check_vat_list",
     "argumenten": {
