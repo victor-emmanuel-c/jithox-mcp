@@ -31,7 +31,7 @@ export const MCP_URL = "https://jithox.com/api/mcp";
 export const SITE = "https://jithox.com";
 const CHECKER_UA = "check-skill/1.0";
 const ALLOWED_FIELDS = new Set(["name", "description", "license", "compatibility", "metadata", "allowed-tools"]);
-const ALLOWED_EXAMPLE_HEADERS = new Set(["content-type", "accept", "authorization"]);
+const ALLOWED_EXAMPLE_HEADERS = new Set(["content-type", "accept", "authorization", "x-jithox-probe"]);
 const IDENT = /^[A-Za-z][A-Za-z0-9_]*$/;
 const SNAKE = /\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g;
 const ALWAYS_GROUND = ["true", "false", "null"];
@@ -119,9 +119,26 @@ export function checkSpec(data, dirName) {
 
 // ---- prices ------------------------------------------------------------------------------------
 
-const PRICE_PATTERNS = [/€/g, /EUR/g, /USD/g, /\$\s?\d/g, /\b\d+(?:[.,]\d+)?\s*credits?\b/gi];
+const PRICE_PATTERNS = [/€/g, /EUR/g, /USD/g, /[$£¥]\s?\d/g, /\b(?:GBP|CHF|JPY|CAD|AUD|USDC|USDT|BTC|ETH)\b/g, /\b\d+(?:[.,]\d+)?\s*credits?\b/gi];
+// Pin whole lines, the skill/file and current tools/list wording, never a broad currency exemption.
+const VAT_COSTS = {
+  check_vat_list: "1 credit (EUR 0.01) per answered row; needs a bearer token.",
+  kbo_company_search: "2 credits (EUR 0.02) per successful call; needs a bearer token.",
+};
 
-export function findPrices(text) {
+export function findPrices(text, { dirName, path, toolDescriptions = new Map() } = {}) {
+  if (dirName === "check-vat-numbers" && path === "SKILL.md") {
+    const seen = new Set();
+    text = text.split(/\r?\n/).map((line) => {
+      for (const [tool, cost] of Object.entries(VAT_COSTS)) {
+        if (line === `- ${tool}: ${cost}` && !seen.has(tool) && toolDescriptions.get(tool)?.includes(cost)) {
+          seen.add(tool);
+          return "";
+        }
+      }
+      return line;
+    }).join("\n");
+  }
   const hits = [];
   for (const re of PRICE_PATTERNS) {
     for (const m of text.matchAll(re)) {
@@ -302,7 +319,7 @@ function prose(md) {
   return out.replace(/https?:\/\/[^\s'"`<>)\]]+/g, " ");
 }
 
-export function checkGrounding(md, { toolNames, ground }) {
+export function checkGrounding(md, { toolNames, ground, reportStatuses = new Set() }) {
   const errors = [];
   const text = prose(md);
   const seen = new Set();
@@ -310,7 +327,7 @@ export function checkGrounding(md, { toolNames, ground }) {
     const w = m[0];
     if (seen.has(w)) continue;
     seen.add(w);
-    if (!toolNames.has(w) && !ground.has(w)) errors.push(`${w} is not a live tool and no live answer uses it`);
+    if (!toolNames.has(w) && !ground.has(w) && !reportStatuses.has(w)) errors.push(`${w} is not a live tool and no live answer uses it`);
   }
   for (const m of text.matchAll(/`([^`\n]+)`/g)) {
     const w = m[1].trim();
@@ -365,7 +382,7 @@ function summarise(payload) {
 export async function runChecks({ text, dirName, fetch = globalThis.fetch, extra = [], headers = {}, mcpUrl = MCP_URL }) {
   const errors = [];
   const info = [];
-  const base = { "user-agent": CHECKER_UA };
+  const base = { "user-agent": CHECKER_UA, "x-jithox-probe": "skill-validation" };
   for (const [k, v] of Object.entries(headers)) base[k.toLowerCase()] = v;
   const files = [{ path: "SKILL.md", text }, ...extra];
 
@@ -385,10 +402,14 @@ export async function runChecks({ text, dirName, fetch = globalThis.fetch, extra
     errors.push("SKILL.md: names starting with jithox- or hermes- are reserved for Jithox's own tools");
   }
 
-  // 2. prices
+  // Bounded regression guard, not a semantic proof of arbitrary prose safety.
+  const unsafe = /\b(?:this (?:skill|package|agent) (?:pays|sends|transfers)|(?:update|change) the (?:vendor record|supplier bank account)|treat (?:unknown|not_run) as (?:a )?pass|dit pakket betaalt)\b/i;
   for (const f of files) {
-    for (const hit of findPrices(f.text)) errors.push(`${f.path}:${hit.line}: price-like text ${JSON.stringify(hit.match)}; point to the pricing field in mcp.json instead`);
+    if (unsafe.test(prose(f.text))) errors.push(`${f.path}: unsafe execution claim`);
   }
+
+  // 2. Prices are checked after live discovery so stale quotes fail closed.
+  const toolDescriptions = new Map();
 
   // 3. live tools/list
   const toolNames = new Set();
@@ -408,11 +429,18 @@ export async function runChecks({ text, dirName, fetch = globalThis.fetch, extra
       if (typeof t?.name !== "string") continue;
       toolNames.add(t.name);
       toolSchemas.set(t.name, t.inputSchema);
+      toolDescriptions.set(t.name, t.description);
     }
     collectGround(json, ground);
     info.push(`live tools/list: ${toolNames.size} tools`);
   } catch (e) {
     errors.push(`tools/list on ${mcpUrl}: ${e.message}`);
+  }
+
+  for (const f of files) {
+    for (const hit of findPrices(f.text, {dirName, path: f.path, toolDescriptions})) {
+      errors.push(`${f.path}:${hit.line}: price-like text ${JSON.stringify(hit.match)}; only exact live-verified VAT cost lines are exempt`);
+    }
   }
 
   // 4. every curl example, run
@@ -478,7 +506,14 @@ export async function runChecks({ text, dirName, fetch = globalThis.fetch, extra
         if (json.result?.isError) {
           const code = payload.parsed?.error?.code;
           if (code === "payment_required") {
-            if (!("authorization" in ex.headers)) errors.push(`${where}: calls a paid tool without an Authorization header`);
+            const anonymousVatProbe = dirName === "check-vat-numbers"
+              && f.path === "references/examples.md"
+              && ex.url === MCP_URL
+              && ex.toolNames.length === 1 && Object.hasOwn(VAT_COSTS, ex.toolNames[0])
+              && ex.headers["x-jithox-probe"] === "gebruik1-build"
+              && res.status === 401
+              && (res.headers.get("www-authenticate") ?? "").includes('resource_metadata="https://jithox.com/.well-known/oauth-protected-resource/api/mcp"');
+            if (!("authorization" in ex.headers) && !anonymousVatProbe) errors.push(`${where}: paid example needs Authorization or an explicitly labelled VAT anonymous 401 challenge`);
             info.push(`${where}: HTTP ${res.status} payment_required (paid tool, no token sent by this checker)`);
           } else {
             errors.push(`${where}: tool answered an error: ${code ?? JSON.stringify(payload.raw ?? payload.parsed).slice(0, 200)}`);
@@ -521,8 +556,10 @@ export async function runChecks({ text, dirName, fetch = globalThis.fetch, extra
 
   // 6. every word the text leans on
   const description = typeof data.description === "string" ? data.description : "";
-  for (const e of checkGrounding(`${description}\n${body || text}`, { toolNames, ground })) errors.push(`SKILL.md: ${e}`);
-  for (const f of extra) for (const e of checkGrounding(f.text, { toolNames, ground })) errors.push(`${f.path}: ${e}`);
+  // A local report status for missing work, not a claim that any server returned it.
+  const reportStatuses = new Set(["not_run"]);
+  for (const e of checkGrounding(`${description}\n${body || text}`, { toolNames, ground, reportStatuses })) errors.push(`SKILL.md: ${e}`);
+  for (const f of extra) for (const e of checkGrounding(f.text, { toolNames, ground, reportStatuses })) errors.push(`${f.path}: ${e}`);
 
   return { errors, info };
 }

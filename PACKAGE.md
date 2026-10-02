@@ -2,8 +2,22 @@
 
 This package connects one remote server: https://jithox.com/api/mcp.
 It contains no server implementation, execution hooks, credentials or payment
-function. The only bundled skill is skills/pay-invoices-safely/SKILL.md.
-Read that skill for the workflow and its stop conditions.
+function. Five skills and their same-named command pairs are bundled:
+
+- pay-invoices-safely
+- verify-bank-detail-change
+- send-peppol-invoice
+- agent-payment-preflight
+- check-vat-numbers
+
+Each skills/<name>/SKILL.md has two scenarios in references/examples.md.
+Claude discovers commands/<name>.md; Gemini discovers commands/<name>.toml.
+The command bodies retain the skill's complete execution/consent restrictions.
+Cursor's documented Markdown-command discovery can reuse the same .md files;
+no separate Cursor-only command files or unverified placeholder behavior is added.
+The ZIP contains 34 explicit runtime files. Eval/test/research files are excluded.
+Read the workflow for its stop conditions. Manifest version stays 1.0.0 during
+this unpublished candidate; only the release lane may publish/version it.
 
 ## Scope
 

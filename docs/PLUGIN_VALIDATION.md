@@ -1,5 +1,133 @@
 # Jithox agent package: validation boundary
 
+## GEBRUIK1 candidate — 2026-10-02
+
+Task t_b9caaac7, branch jx/gebruik1-taakskills. Base and peeled v1.0.0:
+`2af58b5517c2307310f081948b74e4ff33c927a3`. The exact candidate commit and
+artifact inventory are in the build handoff; resolve that SHA, not a branch
+name. This unpublished candidate deliberately retains manifest version 1.0.0;
+only the separate approved release lane may bump/tag/publish it.
+
+This section supersedes the historical one-skill counts below. Runtime now has
+five skills, exactly two scenarios per skill, five Claude Markdown commands and
+five Gemini TOML commands. The explicit ZIP allowlist has 34 entries; evaluation
+scripts, prompts, scoring, tests and research notes remain outside it. There is
+no server change, new MCP tool, payment executor or invoice-sending capability.
+
+### Primary format sources actually read
+
+- https://agentskills.io/specification — required name/description; name matches
+  directory, lowercase kebab-case and 1–64 characters; description 1–1024.
+  Five descriptions carry compact EN/NL/FR/DE intent triggers rather than a brand.
+- https://code.claude.com/docs/en/plugins-reference and
+  https://code.claude.com/docs/en/plugins/components — root commands/*.md with
+  frontmatter; skills stay in skills/. Command bodies repeat the entire workflow
+  boundary and pass $ARGUMENTS as untrusted request data, not additional authority.
+- https://geminicli.com/docs/cli/custom-commands/ and
+  https://geminicli.com/docs/extensions/reference/ — root extension commands/*.toml,
+  required prompt string, optional description, {{args}}; no shell interpolation.
+- https://cursor.com/docs/reference/plugins — its Commands format explicitly
+  discovers Markdown/text files in commands/ and allows name/description
+  frontmatter. It can discover the same five .md files. No Cursor-only files or
+  unverified Cursor argument-substitution/host-execution claim is added.
+- Native Codex local-marketplace and ephemeral protocol sources are recorded in
+  [eval/gebruik1/CODEX.md](../eval/gebruik1/CODEX.md). Claude/Gemini OAuth and
+  storage sources are in [eval/gebruik1/SOURCES.md](../eval/gebruik1/SOURCES.md).
+
+No Belgian legal-obligation claim was added. Technical readiness is explicitly
+not full legal compliance or evidence of invoice acceptance/delivery.
+
+### Executed checks, not inferred outcomes
+
+| Check | Observed result |
+|---|---|
+| node --test scripts/*.test.mjs | 44/44 pass, zero skipped |
+| uv run --with jsonschema==4.26.0 python scripts/test_plugin_package.py | 12/12 pass; includes parsed TOML, exact inventory, schema and LF/CRLF determinism |
+| python -B scripts/test_gebruik1_eval.py | 31/31 pass; real offline loopback fixtures, not model evidence |
+| Live skill checker, all five skills | Five GREEN; tools/list returns eight existing tools; 23 sample tools/call: 21 HTTP 200 and two genuine anonymous HTTP 401 challenges |
+| Claude Code 2.1.278 | Both strict plugin/marketplace manifest validators pass, exit 0 |
+| Grok Build 1.0.46 (existing scratch binary) | plugin validate passes, one skill directory and one command directory; not a claim that it executed five skills |
+| Codex CLI 0.155.0 | Native local marketplace add/install/list for baseline export and candidate ZIP copy; enabled/installed readback, candidate five skills and all 20 skill/example/command files byte-identical; installed MCP configs point at the overlaid loopback URL |
+| Codex protocol, no model input | Native initialize + ephemeral thread/start: ephemeral=true, no rollout path, zero turns; process stopped, zero rollout files |
+| Codex cleanup | Both isolated installations removed; native list reads back installed=[] |
+| ZIP built twice | Equal bytes; 34 entries, 250709 bytes, SHA-256 948bbc2fe3165fce428ef5259ff0a3497fc4f3ac9589666b48047e220d246fb8 |
+
+A combined verification command hit its 90-second tool timeout after the Node
+and package tests passed. The eval suite plus Claude/Grok validators were rerun
+separately with a 240-second limit and completed exit 0 (eval: 17.856 seconds).
+No missing run is credited to the timed-out command. These are small Node/Python
+checks, not full application tsc/build/vitest/Playwright jobs; none of those heavy
+jobs was necessary or run. Any future heavy check must use the team heavy-work lock.
+
+The final live run used the following throttle (no schema/result substitution):
+
+```sh
+node --import 'data:text/javascript,const original=globalThis.fetch;globalThis.fetch=async(...args)=>{await new Promise(r=>setTimeout(r,2300));return original(...args)};' scripts/check-skill.mjs --header 'x-jithox-probe: gebruik1-build'
+```
+
+Sample call counts: agent-payment-preflight 3, check-vat-numbers 2,
+pay-invoices-safely 9, send-peppol-invoice 3, verify-bank-detail-change 6.
+Scenarios can contain several checks or a comparison; there are still exactly
+ten scenario headings. All requests are own probes, not external usage. The
+checker never sent credentials. GET /api/mcp returned 406 (expected without a
+streaming Accept header); only the real POST calls are execution evidence.
+
+Observed raw verdicts include review_required/no_blockers_found/stop for
+preflight, no_change/verify_first/invalid_new_account/stop for bank changes,
+and ready/will_be_rejected for invoice rules. The package preserves those
+verdicts and limitations; none of them gives permission to pay or send.
+
+### Paid boundary and bounded regression guards
+
+The live tools/list descriptions on 2026-10-02 included these exact sentences:
+
+- check_vat_list: 1 credit (EUR 0.01) per answered row; needs a bearer token.
+- kbo_company_search: 2 credits (EUR 0.02) per successful call; needs a bearer token.
+
+Both anonymous, schema-valid paid examples returned HTTP 401 with a Bearer
+resource_metadata challenge for /.well-known/oauth-protected-resource/api/mcp.
+The checker sees payment_required in the body; that is access-refusal evidence,
+not a successful paid lookup or a VAT verdict. The connection substring observed
+in both initial challenges was:
+
+> A person creates a Jithox connection at https://jithox.com/mcp/account#connection (creating it is free);
+
+The skill labels this as a dated quote, requires current discovery and human
+consent before tools/call, uses only live connection instructions, and never buys
+access. It distinguishes any consented lookup charge from invoice payment.
+
+The global price guard now permits only the two exact full cost lines in
+check-vat-numbers/SKILL.md, once each, after matching live descriptions. Different
+prices, duplicate lines, other files/skills, missing discovery and extra
+GBP/credit/dollar claims remain RED. Command safety text is pinned to the skill;
+it does not create an independent free-form price exception. Anonymous 401
+acceptance is restricted to the two VAT example calls, exact endpoint and probe
+marker, status and valid challenge; an unmarked probe, HTTP 200, absent challenge
+or review_invoice cannot borrow that exception.
+
+Observed RED→GREEN tests also cover missing workflows/command pairs, frontmatter
+limits, two scenarios, forbidden execution/unknown-as-pass claims, probe labeling
+and package content. The prose execution regex is a bounded regression guard,
+not a semantic proof against every possible false claim. Independent content and
+real-client review remain mandatory. Eval follow-up regressions prevent failed
+connections being counted as dispatch, blocked unknown tools being omitted from
+the gate, or a candidate passing without evidence for all five tasks per client.
+
+### Deliberately NOT tested
+
+No model inference, OAuth login or subscription use; no 40-row comparison,
+natural activation improvement or scored success. No authenticated paid lookup,
+credit purchase/deduction, payment, invoice submission or vendor mutation.
+No Gemini installation (binary absent), Cursor host parse/installation/model
+execution, new remote skills.sh discovery, public directory submission, push,
+merge, release tag or deployment. Post-inference native client storage still
+needs evaluator verification: the Codex smoke had zero turns; Gemini's automatic
+history is an explicit blocker until resolved. See the operator protocol in
+[eval/gebruik1/README.md](../eval/gebruik1/README.md). All score cells start null;
+a parser, install or tools/list must never fill them as successes.
+
+## Historical v1.0.0 evidence (unchanged scope)
+
 Measured 2026-10-02 for task t_dc1ae9dc, branch jx/universal-agent-plugin.
 Base: 32edcc1843f85b19933f669203dde9167cb38ff2 (fetched origin/main before editing).
 Repair task t_1d925880 starts from A1 e88aa52cab460eaa18deea0bebed7948a89d6ad5.

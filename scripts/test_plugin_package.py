@@ -3,7 +3,11 @@ import json
 from pathlib import Path
 import unittest
 
+import sys
+
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+TASKS = ("agent-payment-preflight", "check-vat-numbers", "pay-invoices-safely", "send-peppol-invoice", "verify-bank-detail-change")
 ENDPOINT = "https://jithox.com/api/mcp"
 
 
@@ -80,7 +84,7 @@ class ManifestTests(unittest.TestCase):
         self.assertNotIn("/api/invoice/review", text)
         for name in ("preflight_payment", "check_payment_change", "check_peppol_ready", "review_invoice"):
             self.assertIn(name, text)
-        self.assertEqual(sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")), ["pay-invoices-safely"])
+        self.assertEqual(sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")), list(TASKS))
 
     def test_official_agent_plugins_schemas_validate_the_portable_files(self):
         import jsonschema
@@ -109,13 +113,38 @@ class ManifestTests(unittest.TestCase):
                 ".cursor-plugin/plugin.json", ".mcp.json", "GEMINI.md", "LICENSE",
                 "PACKAGE.md", "assets/ORIGIN.md", "assets/icon.png", "assets/logo.png", "assets/invoice-check-live.png",
                 "gemini-extension.json", "mcp.json", "plugin.json",
-                "skills/pay-invoices-safely/SKILL.md", "skills/pay-invoices-safely/references/examples.md",
+                *[f"skills/{task}/{file}" for task in TASKS for file in ("SKILL.md", "references/examples.md")],
+                *[f"commands/{task}.{ext}" for task in TASKS for ext in ("md", "toml")],
             ]))
             self.assertEqual(len(names), len(set(names)))
             for info in archive.infolist():
                 self.assertEqual(info.date_time, (1980, 1, 1, 0, 0, 0))
                 self.assertEqual(info.compress_type, zipfile.ZIP_STORED)
                 self.assertNotIn("\r\n", archive.read(info).decode("utf-8") if not info.filename.endswith(".png") else "")
+
+    def test_task_table_and_host_commands_are_complete(self):
+        import re
+        import tomllib
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("## Wat je je agent kunt vragen", readme)
+        section = readme.split("## Wat je je agent kunt vragen", 1)[1].split("\n## ", 1)[0]
+        self.assertEqual(len([line for line in section.splitlines() if line.startswith("| ")]), 6)
+        for link in re.findall(r"\]\(([^)]+)\)", section):
+            if not link.startswith("http"):
+                self.assertTrue((ROOT / link).is_file(), f"Broken task documentation link: {link}")
+        for extension in ("md", "toml"):
+            self.assertEqual(sorted(p.stem for p in (ROOT / "commands").glob(f"*.{extension}")), list(TASKS))
+        for task in TASKS:
+            skill = (ROOT / f"skills/{task}/SKILL.md").read_text(encoding="utf-8").split("---", 2)[2].strip()
+            md = (ROOT / f"commands/{task}.md").read_text(encoding="utf-8").split("---", 2)[2].strip()
+            gemini = tomllib.loads((ROOT / f"commands/{task}.toml").read_text(encoding="utf-8"))
+            self.assertEqual(set(gemini), {"description", "prompt"})
+            for content in (md, gemini["prompt"]):
+                for link in re.findall(r"\]\(([^)]+)\)", content):
+                    if not link.startswith("http"):
+                        self.assertTrue((ROOT / "commands" / link).is_file(), f"Broken command reference: {link}")
+            self.assertIn(task, section)
+            self.assertIn(task, (ROOT / "GEMINI.md").read_text(encoding="utf-8"))
 
     def test_readme_documents_the_listed_skill_and_host_package(self):
         text = (ROOT / "README.md").read_text(encoding="utf-8")

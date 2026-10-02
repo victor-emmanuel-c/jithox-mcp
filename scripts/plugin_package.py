@@ -13,6 +13,19 @@ PACKAGE_FILES = (
     "gemini-extension.json", "mcp.json", "plugin.json",
     "skills/pay-invoices-safely/SKILL.md",
     "skills/pay-invoices-safely/references/examples.md",
+    "skills/verify-bank-detail-change/SKILL.md",
+    "skills/verify-bank-detail-change/references/examples.md",
+    "skills/send-peppol-invoice/SKILL.md",
+    "skills/send-peppol-invoice/references/examples.md",
+    "skills/agent-payment-preflight/SKILL.md",
+    "skills/agent-payment-preflight/references/examples.md",
+    "skills/check-vat-numbers/SKILL.md",
+    "skills/check-vat-numbers/references/examples.md",
+    "commands/pay-invoices-safely.md", "commands/pay-invoices-safely.toml",
+    "commands/verify-bank-detail-change.md", "commands/verify-bank-detail-change.toml",
+    "commands/send-peppol-invoice.md", "commands/send-peppol-invoice.toml",
+    "commands/agent-payment-preflight.md", "commands/agent-payment-preflight.toml",
+    "commands/check-vat-numbers.md", "commands/check-vat-numbers.toml",
 )
 
 

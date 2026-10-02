@@ -34,9 +34,9 @@ For Agent-Skills-compatible clients:
 npx skills add victor-emmanuel-c/jithox-mcp
 ```
 
-The local discovery-only check `DISABLE_TELEMETRY=1 npx skills add . --list`
-listed exactly `pay-invoices-safely` on 2026-10-02. It did not install a skill
-or run an agent task. The remote command installs from the published repo;
+The v1.0.0 discovery-only check `DISABLE_TELEMETRY=1 npx skills add . --list`
+listed one skill on 2026-10-02. The GEBRUIK1 candidate contains five skills;
+that file inventory is not an installation or completed agent task. The remote command installs from the published repo;
 review its permissions and selected version before accepting.
 
 Build the upload ZIP deterministically from the repository root:
@@ -47,6 +47,25 @@ python scripts/plugin_package.py ../directories/jithox-agent-plugin-1.0.0.zip
 
 The builder includes only its explicit runtime-file allowlist. ZIP uploads,
 publisher verification and directory applications remain owner actions.
+
+## Wat je je agent kunt vragen
+
+| Natuurlijke vraag | Skill / commandnaam | Gratis/betaald | Eerlijke uitkomst |
+|---|---|---|---|
+| "Controleer deze factuur en betaalrun voordat ik betaal; meld wat niet gecontroleerd is." | `pay-invoices-safely` | Basischecks gratis; VAT/volledige review betaald na prijs en toestemming | Bevindingen en openstaande controles; geen betaling of betaaltoestemming. |
+| "Het leveranciers-IBAN is gewijzigd; vergelijk het met onze administratie." | `verify-bank-detail-change` | Gratis | stop, verify_first of no_change; terugbellen via eigen administratie, geen recordwijziging. |
+| "Bereid deze e-factuur Peppol voor en controleer de ontvanger." | `send-peppol-invoice` | Gratis | Regelbevindingen en documentondersteuning; geen verzending, acceptatie- of leveringsgarantie. |
+| "Controleer dit betaalvoorstel voordat mijn agent geld uitgeeft." | `agent-payment-preflight` | Gratis | Echte preflight en beperkingen; onbekend is geen pass, er wordt niets betaald. |
+| "Controleer deze btw-lijst of zoek dit bedrijf op; wat kost het?" | `check-vat-numbers` | Betaald; actuele kosten eerst uit live tools/list | Toestemming vóór de call; zonder toegang not_run en de live verbindingsstap, geen verzonnen registerantwoord. |
+
+Gebruik gewone vragen voor skillselectie; activatie verschilt per client en is
+nog geen bewezen taak. Expliciet: Claude `/jithox:<commandnaam>` (pluginnamespace),
+Gemini `/<commandnaam>` (bij naamconflict kan de extensionnamespace verschijnen).
+De bestanden staan in `commands/*.md` en `commands/*.toml`; alle vijf skills
+hebben precies twee scenario's in hun eigen `references/examples.md`.
+Zie [GEBRUIK1-validatie](docs/PLUGIN_VALIDATION.md) en het
+[reproduceerbare evalpakket](eval/gebruik1/README.md). Eigen probes zijn geen
+extern gebruik. Deze kandidaat is niet gepubliceerd of als beter geëvalueerd.
 
 ## Before your agent pays: `preflight_payment`
 
@@ -59,9 +78,10 @@ prove, and a signed evidence token. No account, no token. It never pays and
 never calls an account safe: a check that did not run is listed as `not_run`,
 never as a pass.
 
-Today only the `invoice_bank` rail has checks. For `x402`, `card_or_giftcard`
-and `crypto_bridge` payments no rail checks run, and the best answer is
-`review_required` with reason `rail_not_covered` (measured 2026-09-25).
+The 2026-09-25 measurement covered only `invoice_bank`; the other rails then
+returned `review_required` with `rail_not_covered`. This is historical evidence,
+not current coverage: read the live schema and every returned check for the
+actual `invoice_bank`, `x402`, `card_or_giftcard` or `crypto_bridge` proposal.
 
 The person approved paying invoice 2026-105 to Acme BV; the invoice now asks
 for a different account than the one on file:
@@ -289,7 +309,10 @@ overwriting files of the same name there.
 The last command checks the source copy, not your installed one: it verifies
 the spec rules, runs each curl example against production (free, read-only
 HTTP calls), requires every tool it calls to be in the live `tools/list`, and
-fails on a euro sign, EUR, USD, a `$` amount or "<n> credits" in the text.
+rejects price-like text. The current checker makes one narrow exception for the
+two exact VAT-skill cost lines when they also match live tools/list; it does not
+allow arbitrary prices or money claims elsewhere. Commands mirror the skill
+body and are pinned separately.
 
 A clone, a copy and our own checker show that the files can be fetched and
 that the examples still run. They do not show that any agent loaded the skill,
