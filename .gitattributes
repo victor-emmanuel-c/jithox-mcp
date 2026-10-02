@@ -1,1 +1,3 @@
 examples/dogfood/** -text
+scripts/schemas/*.json -text
+scripts/*.py text eol=lf

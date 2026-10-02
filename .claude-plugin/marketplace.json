@@ -1,0 +1,13 @@
+{
+  "name": "jithox",
+  "description": "Jithox invoice payment and supplier checks.",
+  "owner": {
+    "name": "Jithox"
+  },
+  "plugins": [
+    {
+      "name": "jithox",
+      "source": "./"
+    }
+  ]
+}

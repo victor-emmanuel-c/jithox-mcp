@@ -1,0 +1,35 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "jithox",
+  "version": "1.0.0",
+  "description": "Check invoice payments, changed supplier bank details, Peppol readiness and VAT or company records.",
+  "author": { "name": "Jithox", "url": "https://jithox.com" },
+  "homepage": "https://jithox.com",
+  "repository": "https://github.com/victor-emmanuel-c/jithox-mcp",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Jithox",
+        "shortDescription": "Check an invoice before paying",
+        "longDescription": "Check an invoice payment before an agent acts: compare the proposed payment with the person's approval and the supplier account on file. Check IBAN structure, changed bank details, Peppol readiness and participant support. VAT and company lookups require an authorized connection. Report checks that did not run and unresolved results; a check does not authorize payment or prove who owns an account. Jithox does not pay or send invoices.",
+        "developerName": "Jithox",
+        "category": "Productivity",
+        "capabilities": ["Invoice payment checks", "Peppol checks", "VAT and company lookups"],
+        "websiteURL": "https://jithox.com",
+        "supportURL": "https://jithox.com/contact",
+        "privacyPolicyURL": "https://jithox.com/privacy",
+        "termsOfServiceURL": "https://jithox.com/terms",
+        "defaultPrompt": [
+          "Check this invoice before payment, including its changed bank details against our supplier record. Report unchecked items.",
+          "Check this invoice's Peppol readiness and whether participant 0208:0403170701 supports receiving BIS Billing invoices.",
+          "Check supplier BE0417497106 in VIES and KBO; report unknown or not_run if access or a register is unavailable."
+        ],
+        "brandColor": "#274F38",
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/logo.png",
+        "screenshots": ["./assets/invoice-check-live.png"]
+      }
+    }
+  }
+}

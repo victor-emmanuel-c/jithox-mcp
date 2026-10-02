@@ -1,0 +1,14 @@
+{
+  "name": "jithox",
+  "version": "1.0.0",
+  "description": "Check invoice payments, changed supplier bank details, Peppol readiness and VAT or company records.",
+  "author": {
+    "name": "Jithox",
+    "url": "https://jithox.com"
+  },
+  "homepage": "https://jithox.com",
+  "repository": "https://github.com/victor-emmanuel-c/jithox-mcp",
+  "license": "MIT",
+  "mcpServers": "./.mcp.json",
+  "logo": "assets/logo.png"
+}

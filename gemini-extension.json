@@ -1,0 +1,11 @@
+{
+  "name": "jithox",
+  "version": "1.0.0",
+  "description": "Check invoice payments, changed supplier bank details, Peppol readiness and VAT or company records.",
+  "mcpServers": {
+    "jithox": {
+      "httpUrl": "https://jithox.com/api/mcp"
+    }
+  },
+  "contextFileName": "GEMINI.md"
+}

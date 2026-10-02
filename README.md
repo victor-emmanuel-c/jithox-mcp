@@ -10,8 +10,43 @@ validation, Peppol participant (receiver) lookup, and VIES lookup.
 It is for developers and AI agents that prepare an e-invoice or a payment and
 want a check **before** something is sent, submitted to Peppol, or paid.
 
-This repository holds **examples and a registry manifest only**. It contains no
-server code. The server itself is hosted by Jithox.
+This repository holds examples, a registry manifest and one agent plugin
+package. It contains no server code. The server itself is hosted by Jithox.
+
+## Agent package
+
+See [PACKAGE.md](PACKAGE.md) for the portable Agent Plugins package and its
+Claude Code, Cursor, Gemini and Grok configuration. Validation scope and
+primary sources are in [docs/PLUGIN_VALIDATION.md](docs/PLUGIN_VALIDATION.md).
+No public directory listing or recommendation is implied.
+
+After the reviewed package reaches the public default branch, Claude Code
+can discover this repository marketplace with:
+
+```text
+/plugin marketplace add victor-emmanuel-c/jithox-mcp
+/plugin install jithox@jithox
+```
+
+For Agent-Skills-compatible clients:
+
+```bash
+npx skills add victor-emmanuel-c/jithox-mcp
+```
+
+The local discovery-only check `DISABLE_TELEMETRY=1 npx skills add . --list`
+listed exactly `pay-invoices-safely` on 2026-10-02. It did not install a skill
+or run an agent task. The remote command installs from the published repo;
+review its permissions and selected version before accepting.
+
+Build the upload ZIP deterministically from the repository root:
+
+```bash
+python scripts/plugin_package.py ../directories/jithox-agent-plugin-1.0.0.zip
+```
+
+The builder includes only its explicit runtime-file allowlist. ZIP uploads,
+publisher verification and directory applications remain owner actions.
 
 ## Before your agent pays: `preflight_payment`
 
@@ -216,9 +251,11 @@ so.
 is an [Agent Skill](https://agentskills.io/specification) for an agent that
 is about to pay a supplier invoice or change a supplier's bank account. It
 teaches the agent to call `check_payment_change` on every new IBAN and to hold
-the payment for a call-back by a person, to check the invoice with the free
-`POST /api/invoice/review`, and to check VAT numbers against the EU VIES
-register with the paid `review_invoice`.
+the payment for a call-back by a person, to compare approval and proposed
+payment with `preflight_payment`, and to check the invoice with
+`check_peppol_ready`. Required VAT/company checks use the existing tools only
+with an authorized connection; missing access is reported as `not_run`.
+A required `unknown` or `not_run` check prevents a `ready` report.
 
 It is written for three triggers: every supplier bank change, every invoice
 IBAN that differs from the vendor record, and every payment run.
@@ -274,5 +311,7 @@ or delivers anything. Results are technical checks, not legal or tax advice.
 
 ## License
 
-The examples and files in this repository are MIT-licensed (see [LICENSE](LICENSE)).
+The examples and package code/documentation are MIT-licensed (see [LICENSE](LICENSE)).
+Official schema snapshots retain their Apache-2.0 license in scripts/schemas/.
+Brand-asset provenance and rights are in assets/ORIGIN.md.
 The Jithox service itself is not open source.
