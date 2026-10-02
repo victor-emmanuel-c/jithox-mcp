@@ -2,6 +2,7 @@
 
 Measured 2026-10-02 for task t_dc1ae9dc, branch jx/universal-agent-plugin.
 Base: 32edcc1843f85b19933f669203dde9167cb38ff2 (fetched origin/main before editing).
+Repair task t_1d925880 starts from A1 e88aa52cab460eaa18deea0bebed7948a89d6ad5.
 This is a distribution of the existing endpoint, not new server functionality.
 A passing parser/schema is not a successful host task or directory acceptance.
 
@@ -20,9 +21,10 @@ A passing parser/schema is not a successful host task or directory acceptance.
 - Cursor: https://cursor.com/docs/reference/plugins
 - Gemini: https://geminicli.com/docs/extensions/reference/ and
   https://geminicli.com/docs/tools/mcp-server/
-- Grok: https://docs.x.ai/build/cli/plugins,
-  https://docs.x.ai/build/cli/overview and
-  https://github.com/xai-org/plugin-marketplace
+- Grok: https://github.com/xai-org/plugin-marketplace/blob/main/README.md
+  (primary component reference: `.mcp.json`, `skills/`, optional `plugin.json`).
+  The previously cited https://docs.x.ai/build/cli/plugins returned HTTP 404
+  on 2026-10-02; it is not current validation evidence.
 - Agent Skills discovery: https://skills.sh/docs/cli
 
 ## File responsibilities
@@ -49,8 +51,14 @@ change the artifact. Tests cover duplicate-free inventory, negative secret/path
 fixtures, ignored unrelated files and equal bytes across separate directories.
 The known-pattern scan is a guard, not a guarantee against every possible secret.
 
-Offline regression result: 11/11 Python contract tests and 33/33 existing
-Node tests passed (zero failures/skips).
+A1 recorded 11/11 Python contract tests and 33/33 existing Node tests. A2
+then reproduced 10/11 Python tests on a fresh `core.autocrlf=true` checkout:
+its test fixture converted existing CRLF to CRCRLF, not a ZIP-builder defect.
+Repair t_1d925880 normalizes the fixture basis to LF, asserts real LF/CRLF
+without CRCRLF, and retains equality between the resulting ZIP bytes.
+Exact-revision CRLF/LF suite results, the 33-test Node rerun, three independent
+skill-stop mutants, a disabled-ZIP-normalization mutant, and the unchanged
+ZIP hash are recorded in `UNIVERSEEL_PLUGIN_HANDOFF.json` and its repair logs.
 
 ## TESTED / NOT TESTED
 
@@ -58,18 +66,20 @@ Node tests passed (zero failures/skips).
 |---|---|---|
 | Portable package | Official JSON Schemas 1.0.0, jsonschema 4.26.0; unexpected-field negative controls | None of the vendor extensions is covered by the portable schema |
 | OpenAI | Local interface field/three-prompt/path/asset contracts against the primary field reference | Official ZIP upload, dashboard scans, identity/domain verification, ChatGPT/Codex execution, publication |
-| Claude Code 2.1.278 | Both `claude plugin validate --strict .claude-plugin/plugin.json` and `claude plugin validate --strict .claude-plugin/marketplace.json`: Validation passed, exit 0 | Installed host session or model task; docs describe added MCP-entry validation in 2.1.281, not present in this older validator |
-| Grok Build 1.0.46 | Official Windows binary downloaded to isolated scratch without login; `grok plugin validate <repo>`: valid, 1 skill dir, MCP servers, exit 0 with root plugin.json present | Model session, directory submission, signed-in installation |
+| Claude Code 2.1.278 | A1: both `claude plugin validate --strict .claude-plugin/plugin.json` and `claude plugin validate --strict .claude-plugin/marketplace.json`: Validation passed, exit 0. A2 review evidence only (t_8587be96, comment 2226): anonymous local install in isolated `CLAUDE_CONFIG_DIR`, 1 skill, 1 MCP server, exact endpoint; uninstall followed by empty list. Not rerun by this repair | Installed host/model session; docs describe added MCP-entry validation in 2.1.281, not present in this older validator |
+| Grok Build 1.0.46 | A1 downloaded the official Windows binary to isolated scratch without login; repair reused it and reran `grok plugin validate <repo>`: valid, 1 skill dir, MCP servers, exit 0 with root plugin.json present | Model session, directory submission, signed-in installation |
 | skills.sh | `DISABLE_TELEMETRY=1 npx --yes skills add <local repo> --list`: Found 1 skill, pay-invoices-safely, exit 0 | Installation or remote default-branch discovery of this unreleased branch |
 | Gemini | Local manifest/context contracts against primary docs | Local host validate/install: gemini not on PATH; no CLI installed for this optional check; model execution |
-| Cursor | Portable official schema and local overlay/path contracts against primary docs | Actual IDE/host install/parse; no Cursor CLI available. The template marketplace validator is not a single-plugin host test and was not used as one |
+| Cursor | Portable official schema and local overlay/path contracts against primary docs; desktop launcher 3.23.12 present, version/help checked by repair | Agent-plugin CLI validation unavailable: inspected desktop launcher help exposes VSIX/MCP options, not an agent-plugin validator. Actual host parse/install/model execution NOT TESTED. The template marketplace validator is not a single-plugin host test and was not used as one |
 | Live MCP | tools/list contains exactly the existing eight names; nine unauthenticated sample tools/call requests, all HTTP 200, skill checker GREEN | Paid/authorized VAT/company/invoice calls; model-based end-to-end behavior |
 | Assets/URLs | Five public metadata/asset URLs HTTP 200; source PNG dimensions and hashes; live screenshot via Playwright under the heavy-work lock | Screenshot is not evidence of a completed invoice check |
 
 The `--list` CLI printed a generic noninteractive-install banner, then only its
 Available Skills list and instructions to install separately. No install command
-was run. No host login, terms acceptance, payment, purchase, model task, public
-catalog submission or main-branch merge was performed.
+was run by A1 or this repair. The separate A2 Claude local-install evidence
+above belongs to the reviewer, not this repair. No host login, terms acceptance,
+payment, purchase, model task, public catalog submission or main-branch merge
+was performed by A1 or this repair.
 
 ## Exact live boundary and observations
 

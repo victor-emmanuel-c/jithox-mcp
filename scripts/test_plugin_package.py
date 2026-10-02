@@ -133,18 +133,26 @@ class ManifestTests(unittest.TestCase):
             for name in PACKAGE_FILES:
                 (clone / name).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(ROOT / name, clone / name)
-            original = (clone / "PACKAGE.md").read_bytes()
+            # Git may check out PACKAGE.md as CRLF; construct both fixtures from LF.
+            original = (clone / "PACKAGE.md").read_bytes().replace(b"\r\n", b"\n")
+            self.assertIn(b"\n", original)
+            self.assertNotIn(b"\r", original)
+            crlf = original.replace(b"\n", b"\r\n")
+            self.assertEqual(crlf.count(b"\r\n"), original.count(b"\n"))
+            self.assertNotIn(b"\r\r\n", crlf)
+            self.assertNotIn(b"\n", crlf.replace(b"\r\n", b""))
             for value in ("sk_" + "live_" + "notarealsecret123456789", "C:" + "/Users/example/private.txt"):
                 with self.subTest(value_type=value[:3]):
                     (clone / "PACKAGE.md").write_bytes(original + value.encode())
                     with self.assertRaisesRegex(ValueError, "Unsafe package content"):
                         package_bytes(clone)
             (clone / "PACKAGE.md").write_bytes(original)
-            self.assertEqual(package_bytes(ROOT), package_bytes(clone))
-            (clone / "PACKAGE.md").write_bytes(original.replace(b"\n", b"\r\n"))
-            self.assertEqual(package_bytes(ROOT), package_bytes(clone))
+            lf_package = package_bytes(clone)
+            self.assertEqual(package_bytes(ROOT), lf_package)
+            (clone / "PACKAGE.md").write_bytes(crlf)
+            self.assertEqual(lf_package, package_bytes(clone))
             (clone / ".env").write_text("unrelated-secret", encoding="utf-8")
-            self.assertEqual(package_bytes(ROOT), package_bytes(clone))
+            self.assertEqual(lf_package, package_bytes(clone))
 
     def test_live_catalog_requires_exactly_the_existing_eight_tools(self):
         self.assertTrue((ROOT / "scripts/check_plugin_live.py").is_file(), "Missing live eight-tool boundary check")
