@@ -13,6 +13,17 @@ want a check **before** something is sent, submitted to Peppol, or paid.
 This repository holds examples, a registry manifest and one agent plugin
 package. It contains no server code. The server itself is hosted by Jithox.
 
+## Install
+
+```text
+Remote MCP URL: https://jithox.com/api/mcp
+Claude Code: claude mcp add --transport http jithox https://jithox.com/api/mcp
+Codex: codex mcp add jithox --url https://jithox.com/api/mcp
+Cursor: cursor://anysphere.cursor-deeplink/mcp/install?name=jithox&config=eyJ1cmwiOiJodHRwczovL2ppdGhveC5jb20vYXBpL21jcCJ9
+VS Code: vscode:mcp/install?%7B%22name%22%3A%22jithox%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fjithox.com%2Fapi%2Fmcp%22%7D
+Gemini CLI (~/.gemini/settings.json): {"mcpServers":{"jithox":{"httpUrl":"https://jithox.com/api/mcp"}}}
+```
+
 ## Agent package
 
 See [PACKAGE.md](PACKAGE.md) for the portable Agent Plugins package and its
