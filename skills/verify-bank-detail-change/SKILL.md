@@ -14,6 +14,9 @@ No response, unknown or not_run is never a pass.
 
 Use only check_payment_change and verify_iban at https://jithox.com/api/mcp.
 Read live tools/list for schemas before tools/call. Both are free read-only checks.
+The tool definitions your host loaded from this MCP server are that live list.
+Make each check as a native MCP tool call; never use curl, a shell, a script or
+another direct request for it.
 A listed tool or installed command is not a completed check.
 
 Ask for newIban, the supplierCountry when known, and ibanOnFile from the person's
@@ -41,4 +44,5 @@ A valid IBAN proves structure/checksum only, not account existence or ownership.
 Return tool-called status, raw result, workflow outcome, unresolved checks and the
 human next step. State that nothing was paid or changed.
 
-[Two sample scenarios](references/examples.md).
+[Two sample scenarios](references/examples.md): their curl blocks are this
+package's build check, not calls to run and not results.

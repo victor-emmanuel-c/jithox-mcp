@@ -1,8 +1,10 @@
 # Invoice-payment examples
 
 Public test accounts and a public Peppol participant; fictional names, no customer data.
-These are requests, not captured output. Run only read-only anonymous probes;
-never use sample values to fill missing real inputs. DKK is a sample currency.
+These are requests, not captured output. An agent makes these checks only as
+native MCP tool calls. Each curl block is this package's build check for
+maintainers, never run by an agent, and no Expected line is a result for anyone's
+request. Never use sample values to fill missing real inputs. DKK is a sample currency.
 
 ## Scenario 1: Payment run with a changed supplier account
 

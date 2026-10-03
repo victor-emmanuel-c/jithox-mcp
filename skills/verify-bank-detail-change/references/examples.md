@@ -2,6 +2,9 @@
 
 Public test accounts, fictional supplier; requests and conditional expectations,
 not captured live output. Do not use these accounts for a real transfer.
+An agent makes these checks only as native MCP tool calls. Each curl block is
+this package's build check for maintainers, never run by an agent, and no
+Expected line is a result for anyone's request.
 
 ## Scenario 1: Claimed change, then a different draft account
 

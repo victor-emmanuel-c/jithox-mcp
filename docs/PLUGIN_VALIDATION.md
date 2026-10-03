@@ -1,5 +1,43 @@
 # Jithox agent package: validation boundary
 
+## GEBRUIK1 VAT-probe and native-call repair — 2026-10-03
+
+Task t_13f2cf68 starts from exact local candidate
+`df7bcc537a8219a3d156fe63f0d1986ef557249f` after HOLD review t_fdcebc94
+(false-claim flags 2 to 4: Claude P09, Codex P02/P03/P09; Codex P09/P10 made no
+native paid tools/call). The fix SHA and receipts are in its handoff. No model
+was run for this repair (new_model_runs=0); it is not an evaluation result.
+
+Cause, from the saved native counters (no transcripts were kept): candidate
+Codex P09 and P10 each ran 4 shell commands with 2 denied approvals and 0 MCP
+tool calls; P03 ran 3 with 1 denial. The candidate text called the curl examples
+"exactly such public-input probes", called sample inputs "runnable", and allowed
+an anonymous 401 challenge as a price source before consent.
+
+- check-vat-numbers, skill and both command mirrors: quote the cost from live
+  tools/list only; after separate consent make exactly one native MCP call with
+  the supplied number, never both tools, no retry, no extra field; report a 401
+  in three fixed lines as authentication_required (HTTP 401) and lookup not_run,
+  with no register, VAT or company claim; a call that never reached the server
+  is not_run without a claimed 401; the dated connection quote is labelled as
+  this skill's snapshot, not as a server answer.
+- pay-invoices-safely, verify-bank-detail-change, send-peppol-invoice and their
+  mirrors: checks only as native MCP tool calls; curl blocks are this package's
+  build check and Expected lines are not results. agent-payment-preflight and
+  eval/gebruik1 are unchanged.
+- scripts/check-gebruik1-vat-probe.test.mjs: 9 offline regressions pin both VAT
+  scenarios to the exact P09/P10 arguments in eval/gebruik1/prompts.json, one
+  anonymous build-check probe, the three-line 401 report and no result words.
+
+Executed: node 67/67 (58 + 9 new); package 12/12; eval harness 31/31; 19
+copy-only mutants red with a green control, and the df7bcc5 files with the new
+tests give 9/67 failures; five live validators GREEN with x-jithox-probe
+gebruik1-fix2 (34 requests, 23 tools/call: 21 HTTP 200 and two anonymous 401
+payment_required with resource challenge, zero authorization); Claude Code
+2.1.278 strict plugin and marketplace exit 0; Grok Build 1.0.46 exit 0; two
+byte-identical ZIPs, 34 entries, 261312 bytes. No push, merge, tag, publication,
+credential, paid success, payment or record change.
+
 ## GEBRUIK1 F1/F2 repair — 2026-10-03
 
 Task t_ce59fd98 starts from exact local candidate

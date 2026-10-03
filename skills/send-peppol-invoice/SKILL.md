@@ -14,7 +14,10 @@ No response, unknown or not_run is never a pass.
 
 Use only check_peppol_ready and lookup_peppol_participant on
 https://jithox.com/api/mcp. Read live tools/list/input schemas first. These checks
-are free. If a user asks to send, explicitly say this package does not send:
+are free. The tool definitions your host loaded from this MCP server are that
+live list. Make each check as a native MCP tool call; never use curl, a shell, a
+script or another direct request for it.
+If a user asks to send, explicitly say this package does not send:
 it prepares a findings report, not a network submission or delivery receipt.
 
 Ask for the actual structured invoice: invoiceNumber, issueDate, currency,
@@ -41,4 +44,5 @@ limitations and fixes. If the user needs transmission, hand the prepared finding
 back for their own sending provider; do not invent an access-point integration.
 State that nothing was submitted or delivered by this package.
 
-[Two sample scenarios](references/examples.md).
+[Two sample scenarios](references/examples.md): their curl blocks are this
+package's build check, not calls to run and not results.

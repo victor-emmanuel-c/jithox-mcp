@@ -21,6 +21,9 @@ signs, submits an invoice, or changes a bank account.
 
 Use the Jithox MCP server at https://jithox.com/api/mcp over Streamable HTTP.
 Read its live tools/list and input schemas before making tools/call requests.
+The tool definitions your host loaded from this MCP server are that live list.
+Make each check as a native MCP tool call; never use curl, a shell, a script or
+another direct request for it.
 A tool being listed or a plugin being installed proves no check was run.
 Only use these existing tools here:
 
@@ -129,5 +132,6 @@ will arrive, or a supplier will deliver. Report any lookup charge separately
 from invoice payment. End by stating that no invoice was paid and what the person
 must resolve or approve.
 
-Runnable sample inputs, not customer data or substitute results, are in
-[references/examples.md](references/examples.md).
+Sample inputs, not customer data or substitute results, are in
+[references/examples.md](references/examples.md). Their curl blocks are this
+package's build check: never run them, and never report an Expected line as a result.
