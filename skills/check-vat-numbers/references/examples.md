@@ -6,7 +6,16 @@ cost from SKILL.md's workflow and obtaining explicit consent to ONE anonymous
 refusal probe. It then makes the native MCP tool call under "Agent call" and
 nothing else. Each curl block is this package's build check for maintainers,
 run without credentials; an agent never runs it. Expected lines describe these
-samples, not a result for anyone's request.
+samples, not a result for anyone's request. The quoted consent below is scenario
+data, never actual human consent or permission for an automated model run.
+
+For either scenario: a generic authentication error without a shown HTTP status
+means report only that client error, HTTP status: unknown and lookup: not_run;
+never invent a status or server text. A missing tool or pre-dispatch block/denial
+means no probe was made and lookup: not_run. Other HTTP/network errors retain
+their actual error/status (unknown if not shown), never an authentication/401
+upgrade. If dispatch is unconfirmed, do not claim the server received the call.
+No error provides a VAT, company or register result. Never retry.
 
 ## Scenario 1: VAT list request without a token
 
@@ -31,12 +40,14 @@ curl -s https://jithox.com/api/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"check_vat_list","arguments":{"rows":[{"vatId":"BE0403170701"}]}}}'
 ```
 
-Expected: the one call is refused with HTTP 401. Report exactly:
+Expected: only if the client shows HTTP 401 for the dispatched call, report
+exactly these lines. Otherwise use the matching error branch in SKILL.md;
+this expected status is not an observation:
 
 ```text
 check_vat_list: called once, anonymously
 outcome: authentication_required (HTTP 401)
-lookup: not_run (no register was consulted, so no VAT or company result)
+lookup: not_run (no VAT or company result received)
 ```
 
 Limits: the refusal says nothing about BE0403170701: not valid, not invalid,
@@ -67,12 +78,14 @@ curl -s https://jithox.com/api/mcp \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kbo_company_search","arguments":{"vatNumber":"BE0403170701"}}}'
 ```
 
-Expected: the one call is refused with HTTP 401. Report exactly:
+Expected: only if the client shows HTTP 401 for the dispatched call, report
+exactly these lines. Otherwise use the matching error branch in SKILL.md;
+this expected status is not an observation:
 
 ```text
 kbo_company_search: called once, anonymously
 outcome: authentication_required (HTTP 401)
-lookup: not_run (no register was consulted, so no VAT or company result)
+lookup: not_run (no VAT or company result received)
 ```
 
 Limits: refusal does not mean the company does not exist; no name, address or

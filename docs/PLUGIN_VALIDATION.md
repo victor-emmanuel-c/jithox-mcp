@@ -1,5 +1,61 @@
 # Jithox agent package: validation boundary
 
+## GEBRUIK1 observed-status repair — 2026-10-03
+
+Task t_224972d3 starts from exact local candidate
+`6b10d36a045af6bcdd9ba1cf5253390c51c1054d` after independent HOLD review
+`t_e3703b43`. Its source finding, not a paid native-run observation: all three
+VAT procedure mirrors mapped a generic authentication error to an obligatory
+HTTP 401 report. A synchronized trigger-only change to "Any network error"
+still passed all 67 tests. This repair reproduces that gap offline.
+
+The skill, both command mirrors and the two existing scenarios now separate:
+
+- Client-observed HTTP 401 after dispatch: authentication_required with the
+  observed status; lookup not_run, no VAT/company result received.
+- Generic client authentication error without a shown status: that exact error,
+  HTTP status unknown, lookup not_run; no invented status, server text or
+  confirmed dispatch. Never use the 401 template for this branch.
+- Missing tool or blocked/denied/failed pre-dispatch call: no probe was made,
+  lookup not_run; retain the actual client error.
+- Other HTTP/network error: preserve that error and only a shown status (unknown
+  otherwise), lookup not_run; never turn it into an authentication refusal/401.
+
+The report no longer infers that no register was consulted. All error branches
+forbid lookup/company/register conclusions. Exactly one native anonymous call
+still needs a separate present-human decision after live price disclosure;
+automatic approval and quoted scenario consent are not human consent. No retry,
+login, token, purchase or payment; curl remains a maintainer build check only.
+
+Executed offline: 84 Node tests (67 retained + 17 conditional source-contract
+regressions), 12 package tests and 31 harness tests. The new 17 tests fail against
+the unchanged base. The synchronized network-trigger mutant now fails exactly
+3/84 assertions; the generic-auth trigger does too. All 19 historical red
+controls (18 individual mutations plus the old full-candidate control) and 13
+additional controls remain red, with stable test counts and green restored
+copies. These are bounded prose-contract tests, not simulated client behavior
+or model-evaluation evidence. eval/gebruik1, its prompts/rubric/gate/protocol,
+the F1/F2 implementation and the MCP server are unchanged.
+
+Five live skill validators finish GREEN with x-jithox-probe: gebruik1-fix3.
+The first sweep had four GREEN and one VAT text-grounding failure: the new
+prose used a local report identifier as if it were live vocabulary. Rewording
+that prohibition without changing the checker makes the VAT-only recheck GREEN.
+Total: 39 HTTP requests, 25 tools/call (21 HTTP 200, four anonymous HTTP 401),
+zero authorization/cookies. These are maintainer build checks, not consented
+native P09/P10 cells. The live invoice scenarios preserve ingested_content
+separately from approved and return review_required. Exact ZIP hashes, host
+validator receipts, price replay and the complete logs belong to this task's
+handoff bundle. A first Windows import-path error occurred before any request;
+it is not counted as a live run.
+
+new_model_runs=0. No authenticated lookup, spending, payment, record change,
+push, merge, tag or publication. No heavy tsc/build/Vitest/Playwright needed or
+run. This fix is NOT APPROVE. The eight paid cells from the upstream review
+remain NOT_RUN/UNKNOWN, not zero; interactive herreview t_59c93388 stays blocked
+until Mitch actually decides after live price disclosure. Earlier free rows
+are not evaluation evidence for this new candidate.
+
 ## GEBRUIK1 VAT-probe and native-call repair — 2026-10-03
 
 Task t_13f2cf68 starts from exact local candidate

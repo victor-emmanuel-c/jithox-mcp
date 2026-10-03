@@ -54,6 +54,9 @@ OAuth UI; never start it yourself. Return control to the person.
 Only when the person explicitly consents, after the cost quote, to one
 anonymous access-refusal probe:
 
+Consent must come from a present human in a separate turn after live price
+disclosure. Automatic approval or a script is not human consent.
+
 1. Make exactly ONE native MCP tool call with the number the person supplied,
    as written: check_vat_list for a VAT list or VAT check, kbo_company_search
    for a company record. Never both tools, never a retry. Send only:
@@ -65,24 +68,34 @@ kbo_company_search  {"vatNumber":"<supplied number>"}
 
 2. Add no requesterVatId, countryCode, reference, token or extra row. Decline
    any sign-in, OAuth, token or purchase prompt; it is outside this consent.
-3. An HTTP 401 or authentication error from that call is the refusal. Report
-   it with exactly these three lines, naming the tool you called, then stop:
+3. Only if the client explicitly shows HTTP 401 for that dispatched call,
+   report exactly these three lines, naming the tool you called, then stop:
 
 ```text
 <tool>: called once, anonymously
 outcome: authentication_required (HTTP 401)
-lookup: not_run (no register was consulted, so no VAT or company result)
+lookup: not_run (no VAT or company result received)
 ```
 
-4. Quote server text only if your client actually showed it in this call's
-   result, and call it the server's 401 text. If the client showed only a
-   generic authentication error, say exactly that.
-5. A 401 is no VAT, VIES, KBO, register or company result. Do not call the
+4. If the client shows only a generic authentication error without an HTTP
+   status, report that exact client error and "HTTP status: unknown"; report
+   lookup: not_run. Do not use the HTTP 401 template above, infer a status, or
+   describe the client error as server text. If dispatch is unconfirmed, say
+   so; do not claim the server received a probe. Stop without retrying.
+5. If the tool is missing or the call is blocked, denied or fails before
+   dispatch, make no probe. Report the actual client error, lookup: not_run
+   and "no probe was made"; never report a 401 or refusal you did not receive.
+6. For any other HTTP or network error, preserve the actual error and any
+   status the client showed; if absent, report "HTTP status: unknown". Report
+   lookup: not_run without turning it into an authentication refusal or HTTP
+   401. Do not retry, switch tools or infer whether a register was consulted.
+7. No error or missing answer is a VAT, VIES, KBO, register or company result.
+   Do not call the
    number valid, invalid, well-formed, registered or active, do not judge its
    format yourself, and name no company, address or status.
-6. If no call reached the server (tool missing, call blocked or denied, client
-   error before sending), report the lookup not_run and say no probe was made;
-   never report a 401 or refusal you did not receive.
+8. Quote server text only if your client actually showed it as this call's
+   server response. Label it as the server's 401 text only with an observed
+   HTTP 401; never manufacture server text from a generic client error.
 
 ## Authorized lookup and reporting
 

@@ -14,7 +14,7 @@ const benchNotation = value => JSON.stringify(value).replace(/"([A-Za-z]+)":/g, 
 const report = tool => [
   `${tool}: called once, anonymously`,
   'outcome: authentication_required (HTTP 401)',
-  'lookup: not_run (no register was consulted, so no VAT or company result)',
+  'lookup: not_run (no VAT or company result received)',
 ].join('\n');
 // Words that would turn a refusal into a register, VAT or company result.
 const RESULT_CLAIM = /\b(valid|invalid|well-formed|registered|active|exists?|found|retrieved|success(ful)?|charged|paid|vies|kbo)\b/i;
@@ -46,7 +46,9 @@ for (const c of CASES) {
 
   test(`${c.tool} scenario: the build check probes exactly that call anonymously, once`, () => {
     const scenario = scenarios()[c.index];
-    const call = JSON.parse(blocks(scenario).find(b => b.lang === 'json').code);
+    const native = blocks(scenario).find(b => b.lang === 'json');
+    assert.ok(native, 'the scenario must contain a native agent call');
+    const call = JSON.parse(native.code);
     const curls = extractCurlExamples(scenario);
     assert.equal(curls.length, 1, 'one probe, no retry and no second tool');
     const rpc = JSON.parse(curls[0].body);
