@@ -1,5 +1,68 @@
 # Jithox agent package: validation boundary
 
+## GEBRUIK1 F1/F2 repair — 2026-10-03
+
+Task t_ce59fd98 starts from exact local candidate
+`0b19fe01c3da6bd6963717ddb55fb9d46297dcb3`, above v1.0.0
+`2af58b5517c2307310f081948b74e4ff33c927a3`. The repair SHA/tree and
+scrubbed receipts are in its handoff, not a release or model-evaluation claim.
+The older measurements below remain historical.
+
+Both invoice-payment scenarios now keep invoice-derived instructions as
+`ingested_content`, separately from human `approved`. The DKK 1210 sample invoice
+is explicitly independent of the DKK 10000 payment run; it is not passed as that
+payment's invoice. The README and its Python sibling are corrected too. Their
+2026-09-25 output is retained unchanged and labelled historical, not silently
+rewritten as a response to new arguments.
+
+Real anonymous measurements of both repaired scenarios and the README request:
+HTTP 200, `review_required`, instruction check `warn`, reason
+`instruction_not_from_human`, and charged=false. The changed-account cases also
+return `payment_change_verify_first`. The corrected Python example executed
+initialize, preflight and evidence verification: valid, inputMatch=true.
+
+The first five-skill run found one grounding failure: after the source repair,
+neither invoice scenario returns the old no-blocker verdict. Rather than invent
+an output or loosen grounding, the skill and both command copies now express the
+same safety limit as “An absence of blockers describes only checks that actually
+ran; it is not permission to pay”. The final five-skill run is green.
+
+The price guard retains the exact two live-grounded VAT lines as its only
+exception. A currency-code amount in an explicit cost/fee/per-call claim is now
+checked without enumerating currency codes. Ordinary NOK/SEK/DKK invoice sample
+amounts are not new price claims. This remains a bounded text guard, not a
+semantic proof against every possible phrasing. Existing money-marker checks
+are unchanged.
+
+Executed for this repair:
+
+- `node --test scripts/*.test.mjs`: 58/58 (44 existing + 14 new), zero skipped.
+- `uv run --with jsonschema==4.26.0 python scripts/test_plugin_package.py`: 12/12.
+- `python -B scripts/test_gebruik1_eval.py`: 31/31. Prompts/rubrics unchanged;
+  these offline harness tests are not new model runs.
+- `node --import <handoff>/live-observer.mjs scripts/check-skill.mjs --header
+  'x-jithox-probe: gebruik1-fix'`: five GREEN, 34 actual HTTP requests, including
+  23 tools/call (21 HTTP 200, two valid anonymous HTTP 401). The observer asserts
+  the actual outgoing Request header is gebruik1-fix and no authorization/cookie
+  is sent. Wire User-Agent is check-skill/1.0, not the examples' declared agents.
+- Actual stored tools/list replay through full runChecks: canonical cost quotes
+  and invoice sample amounts green; NOK, SEK, ZAR, XYZ, GBP and DKK cost claims,
+  changed EUR price, and prices in another file red. Explicitly offline fixtures.
+- Copy-only revert controls: each of four human-label reversions, the lost
+  independent-invoice distinction and the wrong scenario-2 verdict gives exactly
+  1 failure out of 58. Restoring the old finite-only currency guard gives 8/58
+  failures. Exact old candidate plus the new tests gives 13/58 failures.
+- Claude Code 2.1.278: both strict plugin and marketplace validations exit 0.
+  Existing Grok Build 1.0.46: plugin validate exit 0. No model session implied.
+- Two byte-identical ZIPs, 34 entries, 251561 bytes, SHA-256
+  `aaf9e5d2153eca7c5e281feb81b9b433ea9274f4d502c5e023870ce723258b81`.
+
+No heavy application build, tsc, Vitest or Playwright was needed or run. No
+credentials, paid successful lookup, payment, invoice submission, vendor write,
+push, merge, tag or publication. Independent herreview t_fdcebc94 owns the new
+40-client-run matrix and any approval. This repair does not claim to clear the
+prior model-assisted evaluation's remaining limitations.
+
 ## GEBRUIK1 candidate — 2026-10-02
 
 Task t_b9caaac7, branch jx/gebruik1-taakskills. Base and peeled v1.0.0:

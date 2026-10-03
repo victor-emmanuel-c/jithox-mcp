@@ -47,7 +47,7 @@ include the structured invoice when available. Compare amounts and currency
 as supplied, without inventing or inferring the person's authorization.
 
 Read every returned check, not just the top-level verdict. A result of
-`stop` or `review_required` holds the payment. `no_blockers_found` describes
+`stop` or `review_required` holds the payment. An absence of blockers describes
 only checks that actually ran; it is not permission to pay or a substitute
 for any required invoice, VAT, participant or human confirmation check.
 

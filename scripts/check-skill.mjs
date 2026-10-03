@@ -9,7 +9,8 @@
 // What it checks, per skill:
 //   1. Spec (https://agentskills.io/specification): frontmatter fields, name = directory name, [a-z0-9-] without
 //      leading, trailing or double hyphens, name 1-64 and description 1-1024 characters, compatibility <= 500.
-//   2. No price in the text (euro sign, EUR, USD, "$" + digit, "<n> credits"): prices live in mcp.json only.
+//   2. No unverified prices: legacy money markers plus currency-code amounts in explicit cost claims.
+//      Only two exact VAT cost lines in the designated file may match current tools/list wording.
 //   3. Every curl example in SKILL.md and in the other .md files of the skill is RUN against production:
 //      tools it calls must be in the live tools/list of https://jithox.com/api/mcp, the answer must be JSON (a
 //      missing route answers a POST with the HTML 404 page), and a tool error other than payment_required is red.
@@ -144,6 +145,21 @@ export function findPrices(text, { dirName, path, toolDescriptions = new Map() }
     for (const m of text.matchAll(re)) {
       const line = text.slice(0, m.index).split("\n").length;
       hits.push({ match: m[0], line });
+    }
+  }
+  // Currency codes are deliberately not enumerated: a new/unknown code cannot
+  // evade an explicit cost claim. Context distinguishes a lookup fee from a
+  // sample invoice amount (e.g. DKK 1210). Keep the legacy marker checks above.
+  // This is a bounded prose guard, not semantic validation of every price claim.
+  const costClaim = /\b(?:costs?|prices?|priced|fees?|charges?|charged|rates?|per\s+(?:lookup|call|row|request))\b/i;
+  const currencyAmount = /\b[A-Z]{3,5}[ \t]*\d+(?:[.,]\d+)?\b|\b\d+(?:[.,]\d+)?[ \t]*[A-Z]{3,5}\b/g;
+  for (const [index, line] of text.split(/\r?\n/).entries()) {
+    for (const clause of line.split(/(?<=[.!?;])\s+/)) {
+      if (!costClaim.test(clause)) continue;
+      for (const m of clause.matchAll(currencyAmount)) {
+        // Do not report an amount again if a legacy marker already flags it.
+        if (!PRICE_PATTERNS.some(re => m[0].search(re) !== -1)) hits.push({ match: m[0], line: index + 1 });
+      }
     }
   }
   return hits;

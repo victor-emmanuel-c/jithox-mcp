@@ -84,17 +84,26 @@ not current coverage: read the live schema and every returned check for the
 actual `invoice_bank`, `x402`, `card_or_giftcard` or `crypto_bridge` proposal.
 
 The person approved paying invoice 2026-105 to Acme BV; the invoice now asks
-for a different account than the one on file:
+for a different account than the one on file. The payment instruction is copied
+from that invoice, so instructionSource is ingested_content, while approved
+separately records what the person approved. These are fictional sample inputs:
 
 ```bash
 curl -s https://jithox.com/api/mcp \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"preflight_payment","arguments":{"rail":"invoice_bank","approved":{"amount":"1210.00","currency":"EUR","payee":{"name":"Acme BV"},"purpose":"Invoice 2026-105"},"instructionSource":"human","payment":{"iban":"BE71 0961 2345 6769","amount":"1210.00","currency":"EUR","payeeName":"Acme BV","supplierCountry":"BE"},"ibanOnFile":"BE68539007547034"}}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"preflight_payment","arguments":{"rail":"invoice_bank","approved":{"amount":"1210.00","currency":"EUR","payee":{"name":"Acme BV"},"purpose":"Invoice 2026-105"},"instructionSource":"ingested_content","payment":{"iban":"BE71 0961 2345 6769","amount":"1210.00","currency":"EUR","payeeName":"Acme BV","supplierCountry":"BE"},"ibanOnFile":"BE68539007547034"}}}'
 ```
 
-The tool result (`result.content[0].text`), unwrapped; run against production
-on 2026-09-25, `…` marks where it was shortened for this page:
+The corrected request above was measured anonymously on 2026-10-03 with
+`x-jithox-probe: gebruik1-fix`: HTTP 200, `review_required`, `instruction: warn`,
+reasons `instruction_not_from_human` and `payment_change_verify_first`, and
+`charged: false`. Missing invoice/VAT checks remained `not_run`. No payment
+was made; the human approval did not change the invoice instruction's source.
+
+Historical output from the old, incorrectly human-labelled request, measured on
+2026-09-25; not the response to the corrected request above. The unwrapped
+result is retained unchanged; `…` marks where it was shortened for this page:
 
 ```json
 {
@@ -231,7 +240,8 @@ so.
   standard library only: `initialize`, then `preflight_payment` on a payment
   whose supplier bank account changed, then `POST /api/v1/evidence/verify` on
   the signed answer. Run with `python examples/python/preflight_payment.py`.
-  Real output against production, 2026-09-25:
+  Historical output from the old Python example (instructionSource=human),
+  measured on 2026-09-25; not output from the corrected script:
   ```
   server: jithox-engine
   verdict: review_required

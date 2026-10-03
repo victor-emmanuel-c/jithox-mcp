@@ -40,12 +40,14 @@ init = rpc("initialize", {
 }, 1)
 print("server:", init["result"]["serverInfo"]["name"])
 
-# The person approved paying invoice 2026-105 to Acme BV. The invoice now asks for a different account.
+# The person approved paying invoice 2026-105 to Acme BV.
+# The payment instruction comes from the invoice, which now asks for a different account.
+# Human approval is separate and does not change that document provenance.
 payment = {
     "rail": "invoice_bank",
     "approved": {"amount": "1210.00", "currency": "EUR", "payee": {"name": "Acme BV"},
                  "purpose": "Invoice 2026-105"},
-    "instructionSource": "human",
+    "instructionSource": "ingested_content",
     "payment": {"iban": "BE71 0961 2345 6769", "amount": "1210.00", "currency": "EUR",
                 "payeeName": "Acme BV", "supplierCountry": "BE"},
     "ibanOnFile": "BE68539007547034",
