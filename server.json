@@ -1,18 +1,51 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.victor-emmanuel-c/jithox-mcp",
-  "title": "Jithox MCP",
-  "description": "Checks before payment: supplier IBAN changes, Peppol, VIES VAT and Belgian KBO.",
-  "version": "1.0.0",
-  "websiteUrl": "https://github.com/victor-emmanuel-c/jithox-mcp",
+  "name": "com.jithox/jithox",
+  "description": "MCP router for read-only IBAN, invoice, VAT and business checks; discovery is free.",
+  "title": "Jithox",
   "repository": {
     "url": "https://github.com/victor-emmanuel-c/jithox-mcp",
     "source": "github"
   },
+  "version": "1.2.0",
+  "websiteUrl": "https://jithox.com",
+  "icons": [
+    {
+      "src": "https://jithox.com/icon.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "streamable-http",
       "url": "https://jithox.com/api/mcp"
     }
-  ]
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "routerTools": [
+        "jithox_task",
+        "find_jithox_tool",
+        "describe_jithox_tool",
+        "call_jithox_tool"
+      ],
+      "access": {
+        "freeTier": "Discovery needs no account. Five underlying checks need no token: preflight_payment, verify_iban, check_payment_change, check_peppol_ready, lookup_peppol_participant.",
+        "paid": "Other underlying tools may require OAuth and credits; describe_jithox_tool returns current access and price. Missing providers fail closed; an unavailable result is not a pass."
+      },
+      "boundaries": [
+        "Read-only checks; nothing sends, pays or files.",
+        "An IBAN check does not prove account ownership. Results are evidence, not legal or tax approval."
+      ],
+      "lastVerified": "2026-11-22",
+      "links": {
+        "documentation": "https://github.com/victor-emmanuel-c/jithox-mcp#readme",
+        "llms": "https://jithox.com/llms.txt",
+        "agentCard": "https://jithox.com/.well-known/agent.json"
+      }
+    }
+  }
 }
